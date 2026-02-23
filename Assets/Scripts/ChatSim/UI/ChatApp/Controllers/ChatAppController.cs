@@ -726,22 +726,6 @@ namespace ChatSim.UI.ChatApp.Controllers
         }
         
         // ═══════════════════════════════════════════════════════════
-        // ░ PUBLIC API - EXTERNAL CLEANUP (DEPRECATED)
-        // ═══════════════════════════════════════════════════════════
-        
-        /// <summary>
-        /// [DEPRECATED] Public API for external cleanup (was called by ChatAppUIManager)
-        /// NOW HANDLED INTERNALLY by Phone OS navigation buttons
-        /// Kept for backward compatibility - will be removed in future
-        /// </summary>
-        [System.Obsolete("Use Phone OS navigation buttons instead")]
-        public void ExitCurrentConversation()
-        {
-            Debug.LogWarning("[ChatAppController] ExitCurrentConversation() is deprecated - use Phone OS buttons");
-            PerformConversationCleanup();
-        }
-        
-        // ═══════════════════════════════════════════════════════════
         // ░ SHARED CLEANUP LOGIC
         // ═══════════════════════════════════════════════════════════
         
