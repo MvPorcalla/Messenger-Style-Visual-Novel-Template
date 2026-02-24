@@ -579,7 +579,7 @@ namespace ChatSim.UI.ChatApp.Controllers
         }
         
         // ═══════════════════════════════════════════════════════════
-        // ░ TIMING CONTROLLER CALLBACKS
+        // ░ TIMING CONTROLLER INTERFACE
         // ═══════════════════════════════════════════════════════════
         
         private void OnMessagesDisplayComplete()
@@ -590,9 +590,12 @@ namespace ChatSim.UI.ChatApp.Controllers
             currentExecutor?.OnMessagesDisplayComplete();
         }
         
+        /// <summary>
+        /// Called by ChatTimingController (same GameObject) after each message bubble is spawned.
+        /// Shows the new message indicator if the user has scrolled up.
+        /// </summary>
         public void OnNewMessageDisplayed(MessageData message)
         {
-            // Show new message indicator if user is scrolled up
             if (autoScroll != null && !autoScroll.IsAtBottom())
             {
                 unreadMessageCount++;
