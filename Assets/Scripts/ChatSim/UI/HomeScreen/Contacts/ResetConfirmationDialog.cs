@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/UI/PhoneOS/Contacts/ResetConfirmationDialog.cs
+// Assets/Scripts/UI/HomeScreen/Contacts/ResetConfirmationDialog.cs
 // Phone Chat Simulation Game - Reset Story Confirmation Dialog
 // ════════════════════════════════════════════════════════════════════════
 
@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace ChatSim.UI.PhoneOS.Contacts
+namespace ChatSim.UI.HomeScreen.Contacts
 {
     /// <summary>
     /// Pure UI middleman for the "Are you sure?" reset confirmation.

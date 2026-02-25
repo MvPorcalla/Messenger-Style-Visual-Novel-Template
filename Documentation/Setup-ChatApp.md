@@ -125,15 +125,26 @@ newMessageIndicator → Drag: NewMessageIndicator (from Hierarchy)
 newMessageButton    → Drag: NewMessageIndicator (the Button component)
 newMessageText      → Drag: IndicatorText (from Hierarchy)
 
-[Phone OS Navigation]
-phoneHomeButton  → Drag: PhoneHomeButton (from Hierarchy)
-phoneBackButton  → Drag: PhoneBackButton (from Hierarchy)
-quitButton       → Drag: QuitButton (from Hierarchy)
+```
+
+**NavigationButtons.cs**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+On the `NavigationBar` GameObject, add the `NavigationButtonsController` component and assign:
+
+```
+[Navigation Buttons]
+homeButton           → Drag: HomeButton
+backButton           → Drag: BackButton
+quitButton           → Drag: QuitButton
 
 [Quit Confirmation]
-quitConfirmationPanel → Drag: QuitConfirmationPanel (from Hierarchy)
-yesQuitButton         → Drag: YesQuitButton (from Hierarchy)
-noQuitButton          → Drag: NoQuitButton (from Hierarchy)
+quitConfirmationPanel → Drag: QuitConfirmationPanel
+yesQuitButton         → Drag: YesQuitButton
+noQuitButton          → Drag: NoQuitButton
+
+[Chat App]
+chatAppController     → Drag: ChatAppController (from Hierarchy)
 ```
 
 **ChatTimingController.cs:** (Script)

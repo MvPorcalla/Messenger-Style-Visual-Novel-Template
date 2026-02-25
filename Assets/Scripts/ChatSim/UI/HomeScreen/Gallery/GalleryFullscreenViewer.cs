@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/ChatSim/UI/PhoneOS/Gallery/Components/GalleryFullscreenViewer.cs
+// Assets/Scripts/ChatSim/UI/HomeScreen/Gallery/Components/GalleryFullscreenViewer.cs
 // Fullscreen CG Viewer for Gallery - Pinch zoom, pan, tap-to-close
 // ════════════════════════════════════════════════════════════════════════
 
@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace ChatSim.UI.PhoneOS.Gallery
+namespace ChatSim.UI.HomeScreen.Gallery
 {
     /// <summary>
     /// Displays CG images in fullscreen mode from the gallery.

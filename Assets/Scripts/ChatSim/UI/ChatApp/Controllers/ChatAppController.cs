@@ -80,29 +80,6 @@ namespace ChatSim.UI.ChatApp.Controllers
         [SerializeField] private TextMeshProUGUI newMessageText;
         
         // ═══════════════════════════════════════════════════════════
-        // ░ INSPECTOR REFERENCES - PHONE OS NAVIGATION
-        // ═══════════════════════════════════════════════════════════
-        
-        [Header("Phone OS Navigation")]
-        [Tooltip("Phone OS home button - returns to phone home screen")]
-        [SerializeField] private Button phoneHomeButton;
-        
-        [Tooltip("Phone OS back button - context-sensitive navigation")]
-        [SerializeField] private Button phoneBackButton;
-        
-        [Tooltip("Quit button - shows quit confirmation")]
-        [SerializeField] private Button quitButton;
-        
-        // ═══════════════════════════════════════════════════════════
-        // ░ INSPECTOR REFERENCES - QUIT CONFIRMATION
-        // ═══════════════════════════════════════════════════════════
-        
-        [Header("Quit Confirmation")]
-        [SerializeField] private GameObject quitConfirmationPanel;
-        [SerializeField] private Button yesQuitButton;
-        [SerializeField] private Button noQuitButton;
-        
-        // ═══════════════════════════════════════════════════════════
         // ░ STATE
         // ═══════════════════════════════════════════════════════════
         
@@ -112,6 +89,16 @@ namespace ChatSim.UI.ChatApp.Controllers
         private int unreadMessageCount = 0;
 
         private AsyncOperationHandle<Sprite> chatProfileImageHandle;
+
+        // ═══════════════════════════════════════════════════════════
+        // ░ PROPERTIES
+        // ═══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Returns true if the chat panel is currently active.
+        /// Used by NavigationButtonsController for context-sensitive back navigation.
+        /// </summary>
+        public bool IsChatActive => chatAppPanel != null && chatAppPanel.activeSelf;
         
         // ═══════════════════════════════════════════════════════════
         // ░ CONSTANTS
@@ -163,13 +150,6 @@ namespace ChatSim.UI.ChatApp.Controllers
             
             if (autoScroll == null)
                 Debug.LogWarning("[ChatAppController] autoScroll not assigned - auto-scroll disabled");
-            
-            // Phone OS navigation validation
-            if (phoneHomeButton == null)
-                Debug.LogWarning("[ChatAppController] phoneHomeButton not assigned!");
-            
-            if (phoneBackButton == null)
-                Debug.LogWarning("[ChatAppController] phoneBackButton not assigned!");
         }
         
         /// <summary>
@@ -186,10 +166,6 @@ namespace ChatSim.UI.ChatApp.Controllers
             // Start with contact list visible
             contactListPanel.SetActive(true);
             chatAppPanel.SetActive(false);
-            
-            // Hide quit confirmation
-            if (quitConfirmationPanel != null)
-                quitConfirmationPanel.SetActive(false);
             
             Debug.Log("[ChatAppController] Initialized: ContactList=ACTIVE, ChatApp=INACTIVE");
         }
@@ -212,26 +188,6 @@ namespace ChatSim.UI.ChatApp.Controllers
             {
                 newMessageIndicator.SetActive(false);
             }
-            
-            // ─────────────────────────────────────────────────────────
-            // PHONE OS NAVIGATION
-            // ─────────────────────────────────────────────────────────
-            
-            if (phoneHomeButton != null)
-                phoneHomeButton.onClick.AddListener(OnPhoneHomePressed);
-            
-            if (phoneBackButton != null)
-                phoneBackButton.onClick.AddListener(OnPhoneBackPressed);
-            
-            if (quitButton != null)
-                quitButton.onClick.AddListener(() => quitConfirmationPanel?.SetActive(true));
-            
-            // Quit confirmation buttons
-            if (yesQuitButton != null)
-                yesQuitButton.onClick.AddListener(OnConfirmQuit);
-            
-            if (noQuitButton != null)
-                noQuitButton.onClick.AddListener(() => quitConfirmationPanel?.SetActive(false));
         }
         
         private void SubscribeToScrollEvents()
@@ -329,6 +285,16 @@ namespace ChatSim.UI.ChatApp.Controllers
                 // STEP 9: Start dialogue flow (normal case)
                 currentExecutor.ContinueFromCurrentState();
             }
+        }
+        
+        /// <summary>
+        /// Called by NavigationButtonsController when OS navigation requires exiting chat.
+        /// Cleans up conversation and returns to contact list.
+        /// </summary>
+        public void ExitToContactList()
+        {
+            PerformConversationCleanup();
+            SwitchToContactList();
         }
         
         // ═══════════════════════════════════════════════════════════
@@ -650,81 +616,8 @@ namespace ChatSim.UI.ChatApp.Controllers
         }
         
         // ═══════════════════════════════════════════════════════════
-        // ░ PHONE OS NAVIGATION
-        // ═══════════════════════════════════════════════════════════
-        
-        /// <summary>
-        /// Phone OS HOME button - always returns to phone home screen
-        /// </summary>
-        private void OnPhoneHomePressed()
-        {
-            Debug.Log("[ChatAppController] Phone HOME pressed");
-            
-            // Clean up conversation if chat is active
-            CleanupChatIfActive();
-            
-            // Navigate to phone screen
-            GameBootstrap.SceneFlow.GoToPhoneScreen();
-        }
-        
-        /// <summary>
-        /// Phone OS BACK button - context-sensitive navigation
-        /// In Chat → Contact List
-        /// In Contact List → Phone Home Screen
-        /// </summary>
-        private void OnPhoneBackPressed()
-        {
-            if (chatAppPanel != null && chatAppPanel.activeSelf)
-            {
-                // In Chat → Go to Contact List
-                Debug.Log("[ChatAppController] Phone BACK: ChatApp → ContactList");
-                
-                // CRITICAL: Clean up conversation BEFORE switching panels
-                PerformConversationCleanup();
-                
-                SwitchToContactList();
-            }
-            else if (contactListPanel != null && contactListPanel.activeSelf)
-            {
-                // In Contact List → Go to Phone Home Screen
-                Debug.Log("[ChatAppController] Phone BACK: ContactList → PhoneScreen");
-                GameBootstrap.SceneFlow.GoToPhoneScreen();
-            }
-            else
-            {
-                Debug.LogWarning("[ChatAppController] Phone BACK pressed but no valid panel is active!");
-            }
-        }
-        
-        /// <summary>
-        /// Quit confirmation handler
-        /// </summary>
-        private void OnConfirmQuit()
-        {
-            Debug.Log("[ChatAppController] Quitting game...");
-            
-            #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-            #else
-            Application.Quit();
-            #endif
-        }
-        
-        // ═══════════════════════════════════════════════════════════
         // ░ SHARED CLEANUP LOGIC
         // ═══════════════════════════════════════════════════════════
-        
-        /// <summary>
-        /// Clean up chat conversation if chat panel is currently active
-        /// </summary>
-        private void CleanupChatIfActive()
-        {
-            if (chatAppPanel != null && chatAppPanel.activeSelf)
-            {
-                Debug.Log("[ChatAppController] Cleaning up active chat conversation");
-                PerformConversationCleanup();
-            }
-        }
         
         /// <summary>
         /// Core cleanup logic used by all exit methods

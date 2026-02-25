@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/ChatSim/UI/PhoneOS/Gallery/Controllers/GalleryController.cs
+// Assets/Scripts/ChatSim/UI/HomeScreen/Gallery/Controllers/GalleryController.cs
 // ════════════════════════════════════════════════════════════════════════
 
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using ChatSim.Core;
 using BubbleSpinner.Data;
 using ChatSim.Data;
 
-namespace ChatSim.UI.PhoneOS.Gallery
+namespace ChatSim.UI.HomeScreen.Gallery
 {
     /// <summary>
     /// Main controller for the CG Gallery panel.

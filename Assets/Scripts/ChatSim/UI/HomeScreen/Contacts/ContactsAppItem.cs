@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/UI/PhoneOS/Contacts/ContactsAppItem.cs
+// Assets/Scripts/UI/HomeScreen/Contacts/ContactsAppItem.cs
 // Phone Chat Simulation Game - Contacts App Item
 // ════════════════════════════════════════════════════════════════════════
 
@@ -11,7 +11,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using BubbleSpinner.Data;
 using ChatSim.Core;
 
-namespace ChatSim.UI.PhoneOS.Contacts
+namespace ChatSim.UI.HomeScreen.Contacts
 {
     /// <summary>
     /// Individual contact button in the Contacts App.

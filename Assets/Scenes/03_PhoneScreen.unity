@@ -592,7 +592,7 @@ GameObject:
   - component: {fileID: 217422015}
   - component: {fileID: 217422016}
   m_Layer: 0
-  m_Name: UIManager
+  m_Name: HomeScreenController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -647,12 +647,6 @@ MonoBehaviour:
     button: {fileID: 1413463825}
     targetScene: 
     targetPanel: {fileID: 1001253158}
-  quitButton: {fileID: 1834161524029329129}
-  homeButton: {fileID: 1834161524029329128}
-  backButton: {fileID: 1834161524029329127}
-  quitConfirmationPanel: {fileID: 614815232}
-  yesQuitButton: {fileID: 614815230}
-  noQuitButton: {fileID: 614815231}
 --- !u!1 &223394408
 GameObject:
   m_ObjectHideFlags: 0
@@ -5616,9 +5610,36 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2910491148348900575, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 1834161524029329128}
   m_SourcePrefab: {fileID: 100100000, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
---- !u!114 &1834161524029329127 stripped
+--- !u!1 &1834161524029329127 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2910491148348900575, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
+  m_PrefabInstance: {fileID: 1834161524029329126}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1834161524029329128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1834161524029329127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a369fcc0fc6d7f14bb672d1e8a9d2e09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  homeButton: {fileID: 1834161524029329130}
+  backButton: {fileID: 1834161524029329129}
+  quitButton: {fileID: 1834161524029329131}
+  quitConfirmationPanel: {fileID: 614815232}
+  yesQuitButton: {fileID: 614815230}
+  noQuitButton: {fileID: 614815231}
+  homeScreenController: {fileID: 217422016}
+--- !u!114 &1834161524029329129 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1708948208302048441, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
   m_PrefabInstance: {fileID: 1834161524029329126}
@@ -5629,7 +5650,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1834161524029329128 stripped
+--- !u!114 &1834161524029329130 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6454427542735441404, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
   m_PrefabInstance: {fileID: 1834161524029329126}
@@ -5640,7 +5661,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1834161524029329129 stripped
+--- !u!114 &1834161524029329131 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8366057329820338391, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
   m_PrefabInstance: {fileID: 1834161524029329126}

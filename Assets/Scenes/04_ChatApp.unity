@@ -817,7 +817,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2910491148348900575, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 441573189}
   m_SourcePrefab: {fileID: 100100000, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
 --- !u!224 &441573184 stripped
 RectTransform:
@@ -857,6 +860,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &441573188 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2910491148348900575, guid: 1c6fb3cc55d92ed4ba1a9152a150575d, type: 3}
+  m_PrefabInstance: {fileID: 441573183}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &441573189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441573188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1099b7fdd226cb94f8b34d02f8ec5167, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  homeButton: {fileID: 441573186}
+  backButton: {fileID: 441573185}
+  quitButton: {fileID: 441573187}
+  quitConfirmationPanel: {fileID: 627746097}
+  yesQuitButton: {fileID: 627746095}
+  noQuitButton: {fileID: 627746096}
+  chatAppController: {fileID: 1578891956}
 --- !u!1 &452370210
 GameObject:
   m_ObjectHideFlags: 0
@@ -3010,7 +3037,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.019607844}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3229,8 +3256,6 @@ MonoBehaviour:
   chatModeIcon: {fileID: 1463986659}
   fastModeSprite: {fileID: 21300000, guid: 727b231aec388614cbf1049c7032222b, type: 3}
   normalModeSprite: {fileID: 21300000, guid: 710cdfa3485d4c24cacba378d4ad2f79, type: 3}
-  chatScrollRect: {fileID: 1122238831}
-  chatContent: {fileID: 2094409215}
   messageDisplay: {fileID: 1122238834}
   choiceDisplay: {fileID: 1186336519}
   timingController: {fileID: 1578891957}
@@ -3238,12 +3263,6 @@ MonoBehaviour:
   newMessageIndicator: {fileID: 1495892802}
   newMessageButton: {fileID: 789661617}
   newMessageText: {fileID: 157652992}
-  phoneHomeButton: {fileID: 441573186}
-  phoneBackButton: {fileID: 441573185}
-  quitButton: {fileID: 441573187}
-  quitConfirmationPanel: {fileID: 627746097}
-  yesQuitButton: {fileID: 627746095}
-  noQuitButton: {fileID: 627746096}
 --- !u!114 &1578891957
 MonoBehaviour:
   m_ObjectHideFlags: 0

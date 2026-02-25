@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/ChatSim/UI/PhoneOS/Gallery/Components/GalleryThumbnailItem.cs
+// Assets/Scripts/ChatSim/UI/HomeScreen/Gallery/Components/GalleryThumbnailItem.cs
 // Individual CG thumbnail - handles display, loading, and click events
 // ════════════════════════════════════════════════════════════════════════
 
@@ -10,7 +10,7 @@ using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace ChatSim.UI.PhoneOS.Gallery
+namespace ChatSim.UI.HomeScreen.Gallery
 {
     /// <summary>
     /// Represents a single CG thumbnail in the gallery.

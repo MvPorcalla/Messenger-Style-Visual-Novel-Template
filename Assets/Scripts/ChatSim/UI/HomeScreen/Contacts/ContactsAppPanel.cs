@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/UI/PhoneOS/Contacts/ContactsAppPanel.cs
+// Assets/Scripts/UI/HomeScreen/Contacts/ContactsAppPanel.cs
 // Phone Chat Simulation Game - Contacts App Panel (03_PhoneScreen)
 // ════════════════════════════════════════════════════════════════════════
 
@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using BubbleSpinner.Data;
 
-namespace ChatSim.UI.PhoneOS.Contacts
+namespace ChatSim.UI.HomeScreen.Contacts
 {
     /// <summary>
     /// Contacts App panel in 03_PhoneScreen > PhoneRoot > Screens.

@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/UI/PhoneOS/Contacts/ContactsAppDetailPanel.cs
+// Assets/Scripts/UI/HomeScreen/Contacts/ContactsAppDetailPanel.cs
 // Phone Chat Simulation Game - Contact Detail Panel
 // ════════════════════════════════════════════════════════════════════════
 
@@ -8,7 +8,7 @@ using UnityEngine.UI;
 using TMPro;
 using BubbleSpinner.Data;
 
-namespace ChatSim.UI.PhoneOS.Contacts
+namespace ChatSim.UI.HomeScreen.Contacts
 {
     /// <summary>
     /// Shows full character info when a contact is tapped.

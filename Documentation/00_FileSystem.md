@@ -59,7 +59,7 @@ Assets/Scripts/
         │       ├── DisclaimerScreen.cs     # First-time disclaimer
         │       └── LockScreen.cs           # Lock screen
         │
-        └── PhoneOS/                        # Phone operating system
+        └── HomeScreen/                        # Phone operating system
             ├── Gallery/                    # 
         │   │   ├── GalleryController.cs
         │   │   ├── GalleryFullscreenVeiwer.cs
