@@ -268,23 +268,11 @@ namespace ChatSim.UI.ChatApp.Controllers
             // STEP 7: Load conversation history (if resuming)
             LoadConversationHistory();
             
-            // STEP 8: Check if we're resuming in pause state
-            var state = currentExecutor.GetState();
-            if (state != null && state.isInPauseState)
-            {
-                Debug.Log("[ChatAppController] Resuming in pause state - showing pause button");
-                
-                // Wait a frame to ensure UI is ready
-                yield return null;
-                
-                // Show pause button immediately without processing nodes
-                choiceDisplay.ShowContinueButton(OnContinueButtonClicked);
-            }
-            else
-            {
-                // STEP 9: Start dialogue flow (normal case)
-                currentExecutor.ContinueFromCurrentState();
-            }
+            // STEP 8: Start dialogue flow
+            // ContinueFromCurrentState handles both fresh start and pause resume internally.
+            // If paused, ProcessCurrentNode finds no unread messages → DetermineNextAction
+            // fires OnPauseReached → HandlePauseReached shows the continue button via event.
+            currentExecutor.ContinueFromCurrentState();
         }
         
         /// <summary>

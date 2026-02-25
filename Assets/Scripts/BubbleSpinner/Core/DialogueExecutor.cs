@@ -101,7 +101,16 @@ namespace BubbleSpinner.Core
         // ═══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Continue from current state (called after loading history)
+        /// Single public entry point for starting or resuming dialogue after initialization.
+        ///
+        /// Resume routing is based on saved isInPauseState — the authoritative signal
+        /// written at every safe exit point:
+        ///   - true  → player stopped at a real pause point → show continue button immediately
+        ///   - false → fresh start, or stopped at choices/end → process node normally
+        ///
+        /// This split is intentional. ProcessCurrentNode() must NOT run on pause resume
+        /// because it re-evaluates unread messages and can fall through to DetermineNextAction,
+        /// which may fire the wrong event (choices/end) before the player taps continue.
         /// </summary>
         public void ContinueFromCurrentState()
         {
@@ -119,15 +128,22 @@ namespace BubbleSpinner.Core
 
             currentNode = currentNodes[state.currentNodeName];
 
-            // If we were paused, show pause button immediately
+            Debug.Log($"[DialogueExecutor] ContinueFromCurrentState: " +
+                    $"Node='{state.currentNodeName}' Paused={state.isInPauseState} " +
+                    $"MsgIndex={state.currentMessageIndex}");
+
             if (state.isInPauseState)
             {
-                Debug.Log("[DialogueExecutor] Resuming from pause state");
-                DetermineNextAction();
+                // Player was at a real pause point — show continue button immediately.
+                // Do NOT call ProcessCurrentNode here: messages before this pause are
+                // already in history and would either replay or return empty and fall
+                // through incorrectly to choices/end.
+                Debug.Log("[DialogueExecutor] Resuming at pause point - firing OnPauseReached");
+                OnPauseReached?.Invoke();
             }
             else
             {
-                // Normal flow - process current node
+                // Fresh start or resumed at choices/end — process normally.
                 ProcessCurrentNode();
             }
         }

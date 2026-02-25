@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using BubbleSpinner.Data;
 
@@ -24,6 +25,18 @@ namespace BubbleSpinner.Core
             public int lineNumber;
             public string fileName;
         }
+
+        // ── PHASE 3 FIX (#7) ────────────────────────────────────────────────
+        // Replaces hardcoded "ch2/ch3/ch4/ch5" strings with a regex that matches
+        // _Ch followed by any number of digits (case-insensitive).
+        // Covers all chapter numbers, not just 2–5.
+        // Also eliminates false positives like "Fetch_ChocolateCake" which
+        // previously matched on "ch" appearing mid-word.
+        // Pattern: _ch\d+ requires an underscore before "ch" and digits after,
+        // so only authoring conventions like "Start_Ch2" or "Node_Ch12" match.
+        // ────────────────────────────────────────────────────────────────────
+        private static readonly Regex CrossChapterPattern =
+            new Regex(@"_ch\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         // ═══════════════════════════════════════════════════════════
         // ░ PUBLIC API
@@ -111,12 +124,8 @@ namespace BubbleSpinner.Core
         /// <summary>
         /// Assigns deterministic messageIds to all messages after the full parse is complete.
         /// Format: "{nodeName}_{messageIndex}"
-        /// Also assigns IDs to player messages inside choices:
-        /// Format: "{nodeName}_choice{choiceIndex}_player{messageIndex}"
-        ///
-        /// Called once per Parse() invocation, after all nodes are finalized.
-        /// IDs are stable across re-parses of the same .bub file, so
-        /// ConversationState.readMessageIds correctly deduplicates on resume.
+        /// Player messages inside choices: "{nodeName}_choice{choiceIndex}_player{messageIndex}"
+        /// Called once per Parse() invocation after all nodes are finalized.
         /// </summary>
         private static void AssignNodeMessageIds(Dictionary<string, DialogueNode> nodes)
         {
@@ -125,13 +134,11 @@ namespace BubbleSpinner.Core
                 var node = kvp.Value;
                 string nodeName = node.nodeName;
 
-                // Assign IDs to node-level messages
                 for (int i = 0; i < node.messages.Count; i++)
                 {
                     node.messages[i].messageId = $"{nodeName}_{i}";
                 }
 
-                // Assign IDs to player messages inside choices
                 for (int c = 0; c < node.choices.Count; c++)
                 {
                     var choice = node.choices[c];
@@ -216,7 +223,7 @@ namespace BubbleSpinner.Core
 
             if (ctx.processingChoiceContent)
             {
-                Debug.LogWarning($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Pause button inside choice block");
+                Debug.LogWarning($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Pause button inside choice block ignored");
             }
             else
             {
@@ -311,7 +318,6 @@ namespace BubbleSpinner.Core
 
             bool shouldUnlock = line.Contains("unlock:true");
 
-            // messageId is left empty here — AssignNodeMessageIds() fills it after parse completes
             var imageMessage = new MessageData(MessageData.MessageType.Image, speaker, "", imagePath)
             {
                 shouldUnlockCG = shouldUnlock
@@ -354,24 +360,55 @@ namespace BubbleSpinner.Core
                 content = content.Substring(1, content.Length - 2);
             }
 
-            MessageData.MessageType msgType = speaker.ToLower() == "system"
+            // ── PHASE 3 FIX (#1) ────────────────────────────────────────────
+            // Previously, the routing for choice block lines was:
+            //   1. Build MessageData unconditionally
+            //   2. Then check if (inChoiceBlock && speaker starts with #)
+            //   3. The else branch ran for ALL other lines, including non-#
+            //      lines inside a choice block, silently adding them to the
+            //      node's message list instead of skipping them.
+            //
+            // Fix: route explicitly on inChoiceBlock first.
+            //   - Inside a choice block with # prefix → player message → add to choice
+            //   - Inside a choice block without # prefix → warn and skip (per spec)
+            //   - Outside a choice block → normal node message
+            //
+            // This means NPC lines accidentally written inside a choice block
+            // now produce a visible warning instead of silently corrupting the
+            // node message list.
+            // ────────────────────────────────────────────────────────────────
+
+            if (ctx.processingChoiceContent && ctx.currentChoice != null)
+            {
+                if (speaker.StartsWith("#"))
+                {
+                    // Strip # prefix from speaker name
+                    string cleanSpeaker = speaker.Substring(1).Trim();
+
+                    MessageData.MessageType msgType = cleanSpeaker.ToLower() == "system"
+                        ? MessageData.MessageType.System
+                        : MessageData.MessageType.Text;
+
+                    var playerMessage = new MessageData(msgType, cleanSpeaker, content);
+                    ctx.currentChoice.playerMessages.Add(playerMessage);
+                }
+                else
+                {
+                    // Non-# line inside a choice block — warn and skip per spec
+                    Debug.LogWarning($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"Non-player line '{speaker}' inside choice block ignored. " +
+                        $"Only '# Speaker: text' lines are valid inside choices.");
+                }
+
+                return true;
+            }
+
+            // Normal node message (outside choice block)
+            MessageData.MessageType normalMsgType = speaker.ToLower() == "system"
                 ? MessageData.MessageType.System
                 : MessageData.MessageType.Text;
 
-            // messageId is left empty here — AssignNodeMessageIds() fills it after parse completes
-            var message = new MessageData(msgType, speaker, content);
-
-            if (ctx.processingChoiceContent && ctx.currentChoice != null && speaker.StartsWith("#"))
-            {
-                speaker = speaker.Substring(1).Trim();
-                message.speaker = speaker;
-                ctx.currentChoice.playerMessages.Add(message);
-            }
-            else
-            {
-                ctx.currentNode.messages.Add(message);
-            }
-
+            ctx.currentNode.messages.Add(new MessageData(normalMsgType, speaker, content));
             return true;
         }
 
@@ -446,61 +483,39 @@ namespace BubbleSpinner.Core
             {
                 var node = kvp.Value;
 
-                if (!string.IsNullOrEmpty(node.nextNode))
+                if (!string.IsNullOrEmpty(node.nextNode) && !nodes.ContainsKey(node.nextNode))
                 {
-                    if (!nodes.ContainsKey(node.nextNode))
-                    {
-                        if (!LooksLikeCrossChapterJump(node.nextNode))
-                        {
-                            Debug.LogWarning($"[BubbleSpinner] [{fileName}] Node '{node.nodeName}' jumps to non-existent '{node.nextNode}'");
-                        }
-                        else
-                        {
-                            Debug.Log($"[BubbleSpinner] [{fileName}] Node '{node.nodeName}' has cross-chapter jump to '{node.nextNode}' (OK)");
-                        }
-                    }
+                    if (!LooksLikeCrossChapterJump(node.nextNode))
+                        Debug.LogWarning($"[BubbleSpinner] [{fileName}] Node '{node.nodeName}' jumps to non-existent '{node.nextNode}'");
+                    else
+                        Debug.Log($"[BubbleSpinner] [{fileName}] Node '{node.nodeName}' has cross-chapter jump to '{node.nextNode}' (OK)");
                 }
 
                 foreach (var choice in node.choices)
                 {
-                    if (!string.IsNullOrEmpty(choice.targetNode))
+                    if (!string.IsNullOrEmpty(choice.targetNode) && !nodes.ContainsKey(choice.targetNode))
                     {
-                        if (!nodes.ContainsKey(choice.targetNode))
-                        {
-                            if (!LooksLikeCrossChapterJump(choice.targetNode))
-                            {
-                                Debug.LogWarning($"[BubbleSpinner] [{fileName}] Choice '{choice.choiceText}' targets non-existent '{choice.targetNode}'");
-                            }
-                            else
-                            {
-                                Debug.Log($"[BubbleSpinner] [{fileName}] Choice '{choice.choiceText}' has cross-chapter target '{choice.targetNode}' (OK)");
-                            }
-                        }
+                        if (!LooksLikeCrossChapterJump(choice.targetNode))
+                            Debug.LogWarning($"[BubbleSpinner] [{fileName}] Choice '{choice.choiceText}' targets non-existent '{choice.targetNode}'");
+                        else
+                            Debug.Log($"[BubbleSpinner] [{fileName}] Choice '{choice.choiceText}' has cross-chapter target '{choice.targetNode}' (OK)");
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Heuristic to detect if a node name looks like a cross-chapter jump.
-        /// Cross-chapter nodes typically have patterns like:
-        /// - "Start_Ch2", "EndNode_Ch3"
-        /// - "Chapter2_Start"
-        /// - Any node with "Ch" or "Chapter" in the name
+        /// Returns true if the node name matches the cross-chapter jump convention.
+        /// Pattern: underscore + "ch" + one or more digits, case-insensitive.
+        /// Examples that match:  Start_Ch2, Node_Ch12, End_CH3
+        /// Examples that don't: Fetch_ChocolateCake, ChapterIntro, StartCh2
         /// </summary>
         private static bool LooksLikeCrossChapterJump(string nodeName)
         {
             if (string.IsNullOrEmpty(nodeName))
                 return false;
 
-            nodeName = nodeName.ToLower();
-
-            return nodeName.Contains("_ch") ||
-                   nodeName.Contains("chapter") ||
-                   nodeName.Contains("ch2") ||
-                   nodeName.Contains("ch3") ||
-                   nodeName.Contains("ch4") ||
-                   nodeName.Contains("ch5");
+            return CrossChapterPattern.IsMatch(nodeName);
         }
     }
 }
