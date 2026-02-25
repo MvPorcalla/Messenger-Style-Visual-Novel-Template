@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/ChatSim/UI/ChatApp/Viewers/FullscreenCGViewer.cs
+// Assets/Scripts/ChatSim/UI/ChatApp/FullscreenCGViewer.cs
 // Fullscreen CG Viewer - Pinch zoom, pan, swipe to close
 // ════════════════════════════════════════════════════════════════════════
 
@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace ChatSim.UI.ChatApp.Components
+namespace ChatSim.UI.ChatApp
 {
     /// <summary>
     /// Displays CG images in fullscreen mode.

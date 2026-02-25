@@ -46,8 +46,8 @@ Assets/Scripts/
         │   │   ├── ContactListPanel.cs     # Contact list
         │   │   └── ContactListItem.cs      # Individual contact button
         │   │
-        │   └── Viewer/
-        │       └── FullscreenCGViewer.cs   # 
+        │   ├── ChatAppNavButtons.cs        # Contact list
+        │   └── FullscreenCGViewer.cs       # 
         │
         ├── Common/                         # Shared UI utilities
         │   ├── Components/
@@ -55,15 +55,23 @@ Assets/Scripts/
         │   │   ├── PooledObject.cs         # Pooling system
         │   │   └── PoolingManager.cs       # Pooling system
         │   │
-        │   └── Screens/
+        │   └── Screens/                    # Scene Specific Controller
         │       ├── DisclaimerScreen.cs     # First-time disclaimer
         │       └── LockScreen.cs           # Lock screen
         │
         └── HomeScreen/                        # Phone operating system
-            ├── Gallery/                    # 
-        │   │   ├── GalleryController.cs
-        │   │   ├── GalleryFullscreenVeiwer.cs
-        │   │   └── GalleryThumbnailItems.cs
-            └── PhoneHomeScreen.cs          # Home screen & app launcher
+            ├── Contacts/                       # 
+            │   ├── ContactsAppDetails.cs
+            │   ├── ContactsAppItems.cs
+            │   ├── ContactsAppPanels.cs
+            │   └── ResetConfirmationDialog.cs
+            │
+            ├── Gallery/                       # 
+            │   ├── GalleryController.cs
+            │   ├── GalleryFullscreenVeiwer.cs
+            │   └── GalleryThumbnailItems.cs
+            │
+            ├── HomeScreenController.cs          # Home screen & app launcher
+            └── HomeScreenNavButtons.cs          # 
 
 ```
