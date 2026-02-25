@@ -9,15 +9,32 @@ another is when i enter a chatapppanel i see the flicker of the content from emp
 
 ---
 
-TODO:
+TODO: Critical
 
 I’m noticing some behavior: DialougeExecutioner.cs
 
-If I interrupt a conversation by backing out while it’s at a choice button or end button, the pause button appears first. Pressing the pause button then shows the choice or end button.
+## Why is it doing this, and should I leave it as-is?
 
-What’s unusual is that if I don’t press the pause button, go back, and re-enter the conversation, it replays the conversation from the last pause point up to the choice or end button.
+**Scenario: conversation reaches a choice, player backs out**
 
-Why is it doing this, and should I leave it as-is?
+| Re-entry | Expected |
+|---|---|
+| 1st re-entry | Choice buttons shown directly — no pause button |
+| Every re-entry after | Same — choice buttons shown directly |
+
+**Scenario: conversation is mid-messages when player backs out**
+
+| Re-entry | Expected |
+|---|---|
+| 1st re-entry | Pause button shown (safe resume point) → press it → messages replay → choice/end shown |
+| Every re-entry after | Same as above until player actually progresses |
+
+
+i quest his is fine 
+
+but my real issue is on fast mode
+everytime i reach choice or end button it show the pause button first before the choice or end button
+also the replaying are getting out of hand when i reach the end and re enter it keeps replaying from the last pause point
 
 ---
 

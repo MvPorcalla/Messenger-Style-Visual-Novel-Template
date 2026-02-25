@@ -17,6 +17,23 @@ namespace BubbleSpinner.Core
     public class ConversationManager : MonoBehaviour
     {
         // ═══════════════════════════════════════════════════════════
+        // ░ PRIVATE TYPES
+        // ═══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Holds a paired executor + state for one active conversation.
+        /// Replaces the previous separate activeExecutors and activeStates dictionaries,
+        /// which could desync if one was updated without the other (Phase 2 fix #8).
+        /// State is always cached here on creation, fixing the orphaned-state bug
+        /// where GetOrCreateState returned a new state that never landed in activeStates (fix #3).
+        /// </summary>
+        private class ConversationSession
+        {
+            public DialogueExecutor executor;
+            public ConversationState state;
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // ░ CONSTANTS
         // ═══════════════════════════════════════════════════════════
 
@@ -32,9 +49,9 @@ namespace BubbleSpinner.Core
         // ░ STATE
         // ═══════════════════════════════════════════════════════════
 
-        private Dictionary<string, DialogueExecutor> activeExecutors = new Dictionary<string, DialogueExecutor>();
-        private Dictionary<string, ConversationState> activeStates = new Dictionary<string, ConversationState>();
-        private DialogueExecutor currentExecutor;
+        // Single dictionary replaces the previous activeExecutors + activeStates pair
+        private Dictionary<string, ConversationSession> activeSessions = new Dictionary<string, ConversationSession>();
+
         private string currentConversationId;
 
         // Save throttling
@@ -45,9 +62,13 @@ namespace BubbleSpinner.Core
         // ░ PROPERTIES
         // ═══════════════════════════════════════════════════════════
 
-        public DialogueExecutor CurrentExecutor => currentExecutor;
+        public DialogueExecutor CurrentExecutor =>
+            currentConversationId != null && activeSessions.TryGetValue(currentConversationId, out var s)
+                ? s.executor
+                : null;
+
         public string CurrentConversationId => currentConversationId;
-        public bool HasActiveConversation => currentExecutor != null;
+        public bool HasActiveConversation => CurrentExecutor != null;
 
         // ═══════════════════════════════════════════════════════════
         // ░ INITIALIZATION
@@ -87,41 +108,46 @@ namespace BubbleSpinner.Core
             string convId = asset.ConversationId;
             Debug.Log($"[ConversationManager] Starting conversation: {asset.characterName} (ID: {convId})");
 
-            ConversationState state = GetOrCreateState(convId, asset.characterName);
-
-            if (!activeStates.ContainsKey(convId))
+            if (!activeSessions.ContainsKey(convId))
             {
-                activeStates[convId] = state;
-            }
+                // ── PHASE 2 FIX (#3 + #8) ───────────────────────────────────────
+                // Previously: GetOrCreateState() returned a new ConversationState
+                // but only sometimes stored it in activeStates, depending on call
+                // site. activeExecutors and activeStates were separate dictionaries
+                // that could drift out of sync.
+                //
+                // Now: state is loaded/created here, immediately paired with its
+                // executor in a ConversationSession, and stored in one dictionary.
+                // There is no path where state or executor exist without the other.
+                // ────────────────────────────────────────────────────────────────
 
-            // Create or reuse executor
-            if (!activeExecutors.ContainsKey(convId))
-            {
+                ConversationState state = LoadOrCreateState(convId, asset.characterName);
+
                 var executor = new DialogueExecutor();
-                
                 executor.Initialize(asset, state, callbacks);
-                
-                // Subscribe to executor events for auto-save
                 SubscribeToExecutorEvents(executor);
-                
-                activeExecutors[convId] = executor;
-                Debug.Log($"[ConversationManager] Created new executor for {convId}");
-                
+
+                activeSessions[convId] = new ConversationSession
+                {
+                    executor = executor,
+                    state = state
+                };
+
+                Debug.Log($"[ConversationManager] Created new session for {convId}");
+
                 // Save after executor initialized state properly
                 ForceSaveGame();
                 Debug.Log($"[ConversationManager] ✓ Initial save complete: Node='{state.currentNodeName}'");
             }
             else
             {
-                Debug.Log($"[ConversationManager] Reusing existing executor for {convId}");
+                Debug.Log($"[ConversationManager] Reusing existing session for {convId}");
             }
 
-            currentExecutor = activeExecutors[convId];
             currentConversationId = convId;
-
             callbacks.OnConversationStarted(convId);
 
-            return currentExecutor;
+            return activeSessions[convId].executor;
         }
 
         /// <summary>
@@ -129,7 +155,7 @@ namespace BubbleSpinner.Core
         /// </summary>
         public void SaveCurrentConversation()
         {
-            if (string.IsNullOrEmpty(currentConversationId) || currentExecutor == null)
+            if (string.IsNullOrEmpty(currentConversationId) || CurrentExecutor == null)
             {
                 Debug.LogWarning("[ConversationManager] No active conversation to save");
                 return;
@@ -144,7 +170,7 @@ namespace BubbleSpinner.Core
         /// </summary>
         public void ForceSaveCurrentConversation()
         {
-            if (string.IsNullOrEmpty(currentConversationId) || currentExecutor == null)
+            if (string.IsNullOrEmpty(currentConversationId) || CurrentExecutor == null)
             {
                 Debug.LogWarning("[ConversationManager] No active conversation to force save");
                 return;
@@ -158,7 +184,7 @@ namespace BubbleSpinner.Core
         /// </summary>
         public void EndCurrentConversation()
         {
-            if (currentExecutor == null)
+            if (CurrentExecutor == null)
             {
                 Debug.LogWarning("[ConversationManager] No active conversation to end");
                 return;
@@ -166,15 +192,15 @@ namespace BubbleSpinner.Core
 
             Debug.Log($"[ConversationManager] Ending conversation: {currentConversationId}");
 
-            // Force save before clearing
             ForceSaveCurrentConversation();
 
-            // Unsubscribe from events
-            UnsubscribeFromExecutorEvents(currentExecutor);
+            if (activeSessions.TryGetValue(currentConversationId, out var session))
+            {
+                UnsubscribeFromExecutorEvents(session.executor);
+            }
 
             callbacks?.OnConversationEnded(currentConversationId);
 
-            currentExecutor = null;
             currentConversationId = null;
 
             Debug.Log("[ConversationManager] Conversation ended");
@@ -187,23 +213,14 @@ namespace BubbleSpinner.Core
         {
             Debug.Log($"[ConversationManager] Resetting conversation: {conversationId}");
 
-            // Remove from active executors
-            if (activeExecutors.ContainsKey(conversationId))
+            if (activeSessions.TryGetValue(conversationId, out var session))
             {
-                var executor = activeExecutors[conversationId];
-                UnsubscribeFromExecutorEvents(executor);
-                activeExecutors.Remove(conversationId);
+                UnsubscribeFromExecutorEvents(session.executor);
+                activeSessions.Remove(conversationId);
             }
 
-            if (activeStates.ContainsKey(conversationId))
-            {
-                activeStates.Remove(conversationId);
-            }
-
-            // Clear current if it matches
             if (currentConversationId == conversationId)
             {
-                currentExecutor = null;
                 currentConversationId = null;
             }
 
@@ -213,25 +230,22 @@ namespace BubbleSpinner.Core
         }
 
         /// <summary>
-        /// Evicts in-memory executor and state cache WITHOUT touching the save file.
-        /// Called by BubbleSpinnerBridge after SaveManager.ResetCharacterStory() has
-        /// already wiped the progress data on disk.
+        /// Evicts in-memory session cache WITHOUT touching the save file.
+        /// Called by BubbleSpinnerBridge after SaveManager.ResetCharacterStory()
+        /// has already wiped the progress data on disk.
         /// </summary>
         public void EvictConversationCache(string conversationId)
         {
             Debug.Log($"[ConversationManager] Evicting cache for: {conversationId}");
 
-            if (activeExecutors.ContainsKey(conversationId))
+            if (activeSessions.TryGetValue(conversationId, out var session))
             {
-                UnsubscribeFromExecutorEvents(activeExecutors[conversationId]);
-                activeExecutors.Remove(conversationId);
+                UnsubscribeFromExecutorEvents(session.executor);
+                activeSessions.Remove(conversationId);
             }
-
-            activeStates.Remove(conversationId);
 
             if (currentConversationId == conversationId)
             {
-                currentExecutor = null;
                 currentConversationId = null;
             }
 
@@ -247,8 +261,10 @@ namespace BubbleSpinner.Core
         /// </summary>
         public List<string> GetUnlockedCGs(string conversationId)
         {
-            var state = GetOrCreateState(conversationId, "");
-            return state?.unlockedCGs ?? new List<string>();
+            if (activeSessions.TryGetValue(conversationId, out var session))
+                return session.state?.unlockedCGs ?? new List<string>();
+
+            return new List<string>();
         }
 
         /// <summary>
@@ -258,13 +274,10 @@ namespace BubbleSpinner.Core
         {
             var allCGs = new List<string>();
 
-            // Get all conversation IDs from active states
-            foreach (var kvp in activeStates)
+            foreach (var kvp in activeSessions)
             {
-                if (kvp.Value?.unlockedCGs != null)
-                {
-                    allCGs.AddRange(kvp.Value.unlockedCGs);
-                }
+                if (kvp.Value.state?.unlockedCGs != null)
+                    allCGs.AddRange(kvp.Value.state.unlockedCGs);
             }
 
             return allCGs;
@@ -275,8 +288,10 @@ namespace BubbleSpinner.Core
         /// </summary>
         public bool IsCGUnlocked(string conversationId, string cgPath)
         {
-            var state = GetOrCreateState(conversationId, "");
-            return state?.unlockedCGs?.Contains(cgPath) ?? false;
+            if (activeSessions.TryGetValue(conversationId, out var session))
+                return session.state?.unlockedCGs?.Contains(cgPath) ?? false;
+
+            return false;
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -338,16 +353,18 @@ namespace BubbleSpinner.Core
         }
 
         // ═══════════════════════════════════════════════════════════
-        // ░ SAVE/LOAD LOGIC (uses callbacks instead of SaveManager)
+        // ░ SAVE/LOAD LOGIC
         // ═══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Get or create state WITHOUT saving immediately.
+        /// Loads existing ConversationState from save, or creates a fresh one.
+        /// Result is always immediately stored in activeSessions by the caller —
+        /// it never floats unowned as it did with the old GetOrCreateState pattern.
         /// </summary>
-        private ConversationState GetOrCreateState(string conversationId, string characterName)
+        private ConversationState LoadOrCreateState(string conversationId, string characterName)
         {
             var existingState = callbacks?.LoadConversationState(conversationId);
-            
+
             if (existingState != null)
             {
                 Debug.Log($"[ConversationManager] Loaded existing state: {conversationId} " +
@@ -355,14 +372,12 @@ namespace BubbleSpinner.Core
                 return existingState;
             }
 
-            // Create new state
             var newState = new ConversationState(conversationId)
             {
                 characterName = characterName
             };
-            
-            Debug.Log($"[ConversationManager] Created new state: {conversationId}");
 
+            Debug.Log($"[ConversationManager] Created new state: {conversationId}");
             return newState;
         }
 
@@ -374,7 +389,7 @@ namespace BubbleSpinner.Core
             if (throttle)
             {
                 float timeSinceLastSave = Time.realtimeSinceStartup - lastSaveTime;
-                
+
                 if (timeSinceLastSave < SAVE_THROTTLE_DELAY)
                 {
                     hasPendingSave = true;
@@ -390,29 +405,28 @@ namespace BubbleSpinner.Core
         /// </summary>
         private void ForceSaveGame()
         {
-            if (!string.IsNullOrEmpty(currentConversationId) && activeStates.ContainsKey(currentConversationId))
-            {
-                var cachedState = activeStates[currentConversationId];
-                
-                bool success = callbacks?.SaveConversationState(cachedState) ?? false;
+            if (string.IsNullOrEmpty(currentConversationId) ||
+                !activeSessions.TryGetValue(currentConversationId, out var session))
+                return;
 
-                if (success)
-                {
-                    lastSaveTime = Time.realtimeSinceStartup;
-                    hasPendingSave = false;
-                    
-                    Debug.Log($"[ConversationManager] ✓ Saved: {currentConversationId} " +
-                             $"(Node: '{cachedState.currentNodeName}', Chapter: {cachedState.currentChapterIndex})");
-                }
-                else
-                {
-                    Debug.LogError($"[ConversationManager] ✗ Save failed for: {currentConversationId}");
-                }
+            bool success = callbacks?.SaveConversationState(session.state) ?? false;
+
+            if (success)
+            {
+                lastSaveTime = Time.realtimeSinceStartup;
+                hasPendingSave = false;
+
+                Debug.Log($"[ConversationManager] ✓ Saved: {currentConversationId} " +
+                         $"(Node: '{session.state.currentNodeName}', Chapter: {session.state.currentChapterIndex})");
+            }
+            else
+            {
+                Debug.LogError($"[ConversationManager] ✗ Save failed for: {currentConversationId}");
             }
         }
 
         // ═══════════════════════════════════════════════════════════
-        // ░ LIFECYCLE (auto-save on app pause/focus/quit)
+        // ░ LIFECYCLE
         // ═══════════════════════════════════════════════════════════
 
         private void Update()
@@ -420,7 +434,7 @@ namespace BubbleSpinner.Core
             if (hasPendingSave)
             {
                 float timeSinceLastSave = Time.realtimeSinceStartup - lastSaveTime;
-                
+
                 if (timeSinceLastSave >= SAVE_THROTTLE_DELAY)
                 {
                     if (!string.IsNullOrEmpty(currentConversationId))
@@ -433,7 +447,7 @@ namespace BubbleSpinner.Core
 
         private void OnApplicationPause(bool pauseStatus)
         {
-            if (pauseStatus && currentExecutor != null && !string.IsNullOrEmpty(currentConversationId))
+            if (pauseStatus && CurrentExecutor != null && !string.IsNullOrEmpty(currentConversationId))
             {
                 Debug.Log("[ConversationManager] App paused - force saving conversation");
                 ForceSaveCurrentConversation();
@@ -442,7 +456,7 @@ namespace BubbleSpinner.Core
 
         private void OnApplicationFocus(bool hasFocus)
         {
-            if (!hasFocus && currentExecutor != null && !string.IsNullOrEmpty(currentConversationId))
+            if (!hasFocus && CurrentExecutor != null && !string.IsNullOrEmpty(currentConversationId))
             {
                 Debug.Log("[ConversationManager] App lost focus - force saving conversation");
                 ForceSaveCurrentConversation();
@@ -451,7 +465,7 @@ namespace BubbleSpinner.Core
 
         private void OnApplicationQuit()
         {
-            if (currentExecutor != null && !string.IsNullOrEmpty(currentConversationId))
+            if (CurrentExecutor != null && !string.IsNullOrEmpty(currentConversationId))
             {
                 Debug.Log("[ConversationManager] App quitting - force saving conversation");
                 ForceSaveCurrentConversation();
@@ -462,29 +476,28 @@ namespace BubbleSpinner.Core
         // ░ EDITOR TOOLS
         // ═══════════════════════════════════════════════════════════
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         [ContextMenu("Debug/Print Active Conversations")]
         private void DebugPrintActiveConversations()
         {
             Debug.Log("╔═══════════════ ACTIVE CONVERSATIONS ═══════════════╗");
             Debug.Log($"║ Current: {currentConversationId ?? "None"}");
-            Debug.Log($"║ Active Executors: {activeExecutors.Count}");
-            
-            foreach (var kvp in activeExecutors)
+            Debug.Log($"║ Active Sessions: {activeSessions.Count}");
+
+            foreach (var kvp in activeSessions)
             {
-                var executor = kvp.Value;
-                var state = executor.GetState();
+                var state = kvp.Value.state;
                 Debug.Log($"║   {kvp.Key}: Chapter {state.currentChapterIndex}, " +
                          $"Node '{state.currentNodeName}', Messages: {state.messageHistory.Count}");
             }
-            
+
             Debug.Log("╚════════════════════════════════════════════════════╝");
         }
 
         [ContextMenu("Debug/Force Save Now")]
         private void DebugForceSave()
         {
-            if (currentExecutor != null)
+            if (CurrentExecutor != null)
             {
                 ForceSaveCurrentConversation();
                 Debug.Log("✓ Force saved current conversation");
@@ -494,6 +507,6 @@ namespace BubbleSpinner.Core
                 Debug.LogWarning("No active conversation to save");
             }
         }
-        #endif
+#endif
     }
 }
