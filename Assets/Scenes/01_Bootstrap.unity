@@ -172,6 +172,7 @@ MonoBehaviour:
   saveManager: {fileID: 2068272162}
   sceneFlowManager: {fileID: 1910827535}
   conversationManager: {fileID: 1928526075}
+  enableDebugLogs: 0
 --- !u!1 &1910827533
 GameObject:
   m_ObjectHideFlags: 0
@@ -216,7 +217,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1ae99baa396dc742bce7b1fcb7b812e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableDebugLogs: 0
 --- !u!1 &1928526073
 GameObject:
   m_ObjectHideFlags: 0

@@ -55,8 +55,6 @@ namespace ChatSim.Core
         /// </summary>
         public void Init()
         {
-            Log("Initializing SaveManager...");
-
             try
             {
                 CreateFolderStructure();
@@ -77,34 +75,25 @@ namespace ChatSim.Core
         #region File System Setup
         private void CreateFolderStructure()
         {
-            Log("Creating save folder structure...");
-
             if (!Directory.Exists(RootSavePath))
             {
                 Directory.CreateDirectory(RootSavePath);
-                Log($"  ✓ Created root folder: {RootSavePath}");
             }
 
             if (!Directory.Exists(GameDataPath))
             {
                 Directory.CreateDirectory(GameDataPath);
-                Log($"  ✓ Created game data folder: {GameDataPath}");
             }
-            
-            Log("✓ Folder structure ready");
         }
 
         private void ValidateFileSystem()
         {
-            Log("Validating file system access...");
-
             string testFile = Path.Combine(RootSavePath, ".test");
             
             try
             {
                 File.WriteAllText(testFile, "test");
                 File.Delete(testFile);
-                Log("✓ File system access confirmed");
             }
             catch (Exception e)
             {
@@ -130,7 +119,6 @@ namespace ChatSim.Core
         public bool SaveExists()
         {
             bool exists = File.Exists(SaveFilePath);
-            Log($"Save exists check: {exists}");
             return exists;
         }
 
@@ -145,18 +133,15 @@ namespace ChatSim.Core
             
             if (saveData != null)
             {
-                Log("✓ Loaded existing save data");
                 return saveData;
             }
             
             // No save exists - create new one
-            Log("No save found - creating new save data");
             SaveData newSave = CreateNewSave();
             
             // Save it immediately to disk
             SaveGame(newSave);
             
-            Log("✓ New save data created and saved");
             return newSave;
         }
 
@@ -197,7 +182,6 @@ namespace ChatSim.Core
                 if (File.Exists(SaveFilePath))
                 {
                     File.Copy(SaveFilePath, BackupFilePath, overwrite: true);
-                    Log("  ✓ Previous save backed up");
                 }
                 
                 // 3. Replace save file with temp file
@@ -322,8 +306,6 @@ namespace ChatSim.Core
         /// </summary>
         public SaveData CreateNewSave()
         {
-            Log("Creating new save data...");
-            
             SaveData newSave = new SaveData
             {
                 saveVersion = 1
@@ -396,7 +378,6 @@ namespace ChatSim.Core
         {
             if (!File.Exists(filePath))
             {
-                Log($"{fileDescription} not found");
                 return null;
             }
 
@@ -415,9 +396,6 @@ namespace ChatSim.Core
                 }
 
                 Log($"✓ Loaded {fileDescription}");
-                Log($"  Save version: {saveWrapper.saveVersion}");
-                Log($"  Saved on: {saveWrapper.saveTimestamp}");
-                Log($"  Playtime: {FormatPlaytime(saveWrapper.playtimeSeconds)}");
                 
                 // Trigger event only when loading primary save
                 if (filePath == SaveFilePath)

@@ -28,8 +28,9 @@ namespace ChatSim.Core
         // ═══════════════════════════════════════════════════════════
         
         /// <summary>
-        /// Load a sprite from Addressables asynchronously.
-        /// Callbacks: onLoaded(sprite), onFailed(error)
+        /// Asynchronously load a sprite by its addressable key. If the sprite is already cached, the callback is invoked immediately.
+        /// If the sprite is currently being loaded, the callback will be added to the existing load operation.
+        /// Otherwise, a new load operation will be started. On failure, an error message is passed to the onFailed callback.
         /// </summary>
         public static void LoadSpriteAsync(
             string addressableKey, 
@@ -43,27 +44,18 @@ namespace ChatSim.Core
                 return;
             }
             
-            // Check cache first
             if (cachedSprites.TryGetValue(addressableKey, out Sprite cached))
             {
-                Debug.Log($"[AddressablesImageLoader] ✓ Cache hit: {addressableKey}");
                 onLoaded?.Invoke(cached);
                 return;
             }
             
-            // Check if already loading
             if (ongoingLoads.ContainsKey(addressableKey))
             {
-                Debug.Log($"[AddressablesImageLoader] Already loading: {addressableKey}");
-                
-                // Subscribe to existing load operation
                 var existingHandle = ongoingLoads[addressableKey];
                 existingHandle.Completed += (op) => HandleLoadComplete(op, addressableKey, onLoaded, onFailed);
                 return;
             }
-            
-            // Start new load
-            Debug.Log($"[AddressablesImageLoader] Loading: {addressableKey}");
             
             var handle = Addressables.LoadAssetAsync<Sprite>(addressableKey);
             ongoingLoads[addressableKey] = handle;
@@ -72,7 +64,8 @@ namespace ChatSim.Core
         }
         
         /// <summary>
-        /// Preload a sprite into cache (fire and forget)
+        /// Preload a sprite into the cache without needing it immediately. 
+        /// Useful for warming up assets before they are needed.
         /// </summary>
         public static void PreloadSprite(string addressableKey)
         {
@@ -80,7 +73,8 @@ namespace ChatSim.Core
         }
         
         /// <summary>
-        /// Check if a sprite is already cached
+        /// Check if a sprite is already cached for the given addressable key. 
+        /// This does not check ongoing loads.
         /// </summary>
         public static bool IsCached(string addressableKey)
         {
@@ -88,13 +82,13 @@ namespace ChatSim.Core
         }
         
         /// <summary>
-        /// Clear all cached sprites (use sparingly - causes reloads)
+        /// Clear the entire sprite cache and release any ongoing load operations. 
+        /// Use this if you need to free up memory or reset state.
         /// </summary>
         public static void ClearCache()
         {
             Debug.Log($"[AddressablesImageLoader] Clearing cache ({cachedSprites.Count} sprites)");
             
-            // Release all handles
             foreach (var kvp in ongoingLoads)
             {
                 if (kvp.Value.IsValid())
@@ -111,13 +105,20 @@ namespace ChatSim.Core
         // ░ LOAD COMPLETION HANDLER
         // ═══════════════════════════════════════════════════════════
         
+        /// <summary>
+        /// Handle the completion of a sprite load operation. On success, cache the sprite and invoke the onLoaded callback. 
+        /// On failure, log the error and invoke the onFailed callback with an error message.
+        /// </summary>
+        /// <param name="operation">The async operation handle for the sprite load.</param>
+        /// <param name="addressableKey">The addressable key used to identify the sprite.</param>
+        /// <param name="onLoaded">Callback invoked with the loaded sprite on success.</param>
+        /// <param name="onFailed">Callback invoked with an error message on failure.</param>
         private static void HandleLoadComplete(
             AsyncOperationHandle<Sprite> operation, 
             string addressableKey,
             Action<Sprite> onLoaded,
             Action<string> onFailed)
         {
-            // Remove from ongoing loads
             ongoingLoads.Remove(addressableKey);
             
             if (operation.Status == AsyncOperationStatus.Succeeded)
@@ -126,10 +127,7 @@ namespace ChatSim.Core
                 
                 if (sprite != null)
                 {
-                    // Cache the sprite
                     cachedSprites[addressableKey] = sprite;
-                    
-                    Debug.Log($"[AddressablesImageLoader] ✓ Loaded: {addressableKey}");
                     onLoaded?.Invoke(sprite);
                 }
                 else
@@ -155,7 +153,6 @@ namespace ChatSim.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            // Clear static state when entering play mode (Editor only)
             cachedSprites.Clear();
             ongoingLoads.Clear();
         }

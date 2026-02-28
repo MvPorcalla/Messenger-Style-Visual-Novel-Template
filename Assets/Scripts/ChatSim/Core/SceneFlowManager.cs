@@ -15,15 +15,6 @@ namespace ChatSim.Core
     /// </summary>
     public class SceneFlowManager : MonoBehaviour
     {
-        #region Settings
-        [Header("Debug Settings")]
-        [SerializeField] private bool enableDebugLogs = true;
-        
-        // [Header("Transition Settings")]
-        // [SerializeField] private float fadeOutDuration = 0.3f;
-        // [SerializeField] private float fadeInDuration = 0.3f;
-        #endregion
-
         #region State
         private string _currentScene = null;
         private bool _isTransitioning = false;
@@ -43,8 +34,6 @@ namespace ChatSim.Core
         {
             Scene activeScene = SceneManager.GetActiveScene();
             _currentScene = activeScene.name;
-            
-            Log($"SceneFlowManager initialized (current scene: {_currentScene})");
         }
         #endregion
 
@@ -93,7 +82,6 @@ namespace ChatSim.Core
         public void SetCurrentScene(string sceneName)
         {
             _currentScene = sceneName;
-            Log($"Current scene set: {sceneName}");
         }
         
         #endregion
@@ -133,7 +121,6 @@ namespace ChatSim.Core
         private IEnumerator LoadSceneCoroutine(string sceneName)
         {
             _isTransitioning = true;
-            Log($"Loading scene: {sceneName}");
             
             // Trigger scene changing event
             GameEvents.TriggerSceneChanging(sceneName);
@@ -166,8 +153,6 @@ namespace ChatSim.Core
                 SceneManager.SetActiveScene(newScene);
                 _currentScene = sceneName;
                 
-                Log($"✓ Scene loaded: {sceneName}");
-                
                 // Trigger scene loaded event
                 GameEvents.TriggerSceneLoaded(sceneName);
             }
@@ -185,20 +170,15 @@ namespace ChatSim.Core
         #endregion
 
         #region Logging
-        private void Log(string message)
+
+        private static void LogError(string message)
         {
-            if (enableDebugLogs)
-                Debug.Log($"[SceneFlow] {message}");
+            Debug.LogError($"[SceneFlow] {message}");
         }
 
-        private void LogWarning(string message)
+        private static void LogWarning(string message)
         {
-            Debug.LogWarning($"[SceneFlow] WARNING: {message}");
-        }
-
-        private void LogError(string message)
-        {
-            Debug.LogError($"[SceneFlow] ERROR: {message}");
+            Debug.LogWarning($"[SceneFlow] {message}");
         }
         #endregion
 

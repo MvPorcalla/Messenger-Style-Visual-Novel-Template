@@ -18,20 +18,6 @@ namespace ChatSim.Core
     public class BubbleSpinnerBridge : IBubbleSpinnerCallbacks
     {
         private ConversationManager _conversationManager;
-
-        // ── PHASE 2 FIX (Bridge disk-read caching) ──────────────────────────
-        // Previously, every SaveConversationState and LoadConversationState call
-        // did a full disk read via GameBootstrap.Save.LoadGame() before mutating
-        // and writing back. On mobile, this caused a disk read + write per message
-        // batch — visible as hitches during active conversation.
-        //
-        // Fix: cache the SaveData in memory after the first load. All subsequent
-        // reads and writes operate on the cached object. The cache is:
-        //   - Populated lazily on first access via GetSaveData()
-        //   - Invalidated (nulled) in Cleanup() on bridge teardown
-        //   - Invalidated in OnCharacterStoryReset() so the next access re-reads
-        //     the post-reset state from disk cleanly
-        // ────────────────────────────────────────────────────────────────────
         private SaveData _cachedSaveData;
 
         public BubbleSpinnerBridge(ConversationManager conversationManager)
@@ -73,29 +59,17 @@ namespace ChatSim.Core
 
             var saveData = GetSaveData();
 
-            // Find and replace existing state, or add new one
             var index = saveData.conversationStates.FindIndex(c => c.conversationId == state.conversationId);
 
             if (index >= 0)
-            {
                 saveData.conversationStates[index] = state;
-            }
             else
-            {
                 saveData.conversationStates.Add(state);
-            }
 
-            // Write to disk — cache already reflects the mutation above
             bool success = GameBootstrap.Save.SaveGame(saveData);
 
-            if (success)
-            {
-                Debug.Log($"[BubbleSpinnerBridge] ✓ Saved conversation: {state.conversationId}");
-            }
-            else
-            {
+            if (!success)
                 Debug.LogError($"[BubbleSpinnerBridge] ✗ Failed to save: {state.conversationId}");
-            }
 
             return success;
         }
@@ -103,19 +77,7 @@ namespace ChatSim.Core
         public ConversationState LoadConversationState(string conversationId)
         {
             var saveData = GetSaveData();
-
-            var state = saveData.conversationStates.Find(c => c.conversationId == conversationId);
-
-            if (state != null)
-            {
-                Debug.Log($"[BubbleSpinnerBridge] ✓ Loaded conversation: {conversationId}");
-            }
-            else
-            {
-                Debug.Log($"[BubbleSpinnerBridge] No saved state for: {conversationId}");
-            }
-
-            return state;
+            return saveData.conversationStates.Find(c => c.conversationId == conversationId);
         }
 
         public void DeleteConversationState(string conversationId)
@@ -162,10 +124,7 @@ namespace ChatSim.Core
         private void OnCharacterStoryReset(string conversationId)
         {
             Debug.Log($"[BubbleSpinnerBridge] Story reset — invalidating cache and evicting: {conversationId}");
-
-            // Invalidate cache so the next access re-reads the post-reset state from disk
             _cachedSaveData = null;
-
             _conversationManager?.EvictConversationCache(conversationId);
         }
 
