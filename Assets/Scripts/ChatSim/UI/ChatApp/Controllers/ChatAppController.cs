@@ -19,6 +19,15 @@ namespace ChatSim.UI.ChatApp.Controllers
     /// Main controller for Chat App UI - interfaces with BubbleSpinner.
     /// Attach to: ChatAppController GameObject
     /// </summary>
+    
+    /// <summary>
+    /// Handles LIVE UI communication with BubbleSpinner.
+    /// Subscribes directly to DialogueExecutor events for real-time dialogue flow.
+    ///
+    /// Does NOT handle save/load/reset — those go through BubbleSpinnerBridge
+    /// because they need to survive between sessions and be decoupled from UI.
+    /// </summary>
+    /// 
     public class ChatAppController : MonoBehaviour
     {
         // ═══════════════════════════════════════════════════════════

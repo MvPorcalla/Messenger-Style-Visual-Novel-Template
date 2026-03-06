@@ -15,6 +15,16 @@ namespace ChatSim.Core
     /// Handles saving/loading conversation state using ChatSim's SaveManager and triggers
     /// ChatSim events when conversations start, end, or when CGs are unlocked.
     /// </summary>
+    
+    /// <summary>
+    /// Handles PERSISTENCE communication between BubbleSpinner and ChatSim.
+    /// Save, load, delete, reset — anything that touches the save file goes here.
+    ///
+    /// Does NOT handle live UI events (messages, choices, pause).
+    /// Those go directly from DialogueExecutor to ChatAppController
+    /// because they are real-time and have no persistence concern.
+    /// </summary>
+
     public class BubbleSpinnerBridge : IBubbleSpinnerCallbacks
     {
         private ConversationManager _conversationManager;
