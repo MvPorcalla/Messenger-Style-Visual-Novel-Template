@@ -138,6 +138,7 @@ namespace ChatSim.Core
         {
             Save.Init();
             SceneFlow.Init();
+            bubbleSpinnerBridge?.Cleanup();
             bubbleSpinnerBridge = new BubbleSpinnerBridge(conversationManager);
             Conversation.Initialize(bubbleSpinnerBridge);
             EnsureSaveDataExists();
@@ -222,12 +223,6 @@ namespace ChatSim.Core
 
             Log($"Initialized: {_isInitialized}");
             Log("===========================");
-        }
-
-        [ContextMenu("Log GameEvents Subscribers")]
-        private void LogEventSubscribers()
-        {
-            GameEvents.LogSubscriberCounts();
         }
 #endif
         #endregion

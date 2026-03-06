@@ -151,55 +151,6 @@ namespace ChatSim.Core
             Log("All events cleared");
         }
         
-        public static void LogSubscriberCounts()
-        {
-            Debug.Log("=== GameEvents Subscriber Counts ===");
-            
-            // Scene
-            LogEventCount("OnSceneLoaded", OnSceneLoaded);
-            LogEventCount("OnSceneChanging", OnSceneChanging);
-            
-            // Save/Load
-            LogEventCount("OnNewGameStarted", OnNewGameStarted);
-            LogEventCount("OnGameSaved", OnGameSaved);
-            LogEventCount("OnGameLoaded", OnGameLoaded);
-            LogEventCount("OnSaveDeleted", OnSaveDeleted);
-            
-            // Phone State
-            LogEventCount("OnPhoneLocked", OnPhoneLocked);
-            LogEventCount("OnPhoneUnlocked", OnPhoneUnlocked);
-            LogEventCount("OnAppOpened", OnAppOpened);
-            LogEventCount("OnAppClosed", OnAppClosed);
-            
-            // Conversations
-            LogEventCount("OnConversationStarted", OnConversationStarted);
-            LogEventCount("OnConversationUnlocked", OnConversationUnlocked);
-            LogEventCount("OnMessageReceived", OnMessageReceived);
-            LogEventCount("OnMessageSent", OnMessageSent);
-            LogEventCount("OnConversationCompleted", OnConversationCompleted);
-            
-            // CG Events
-            LogEventCount("OnCGUnlocked", OnCGUnlocked);
-            
-            // Notifications
-            LogEventCount("OnNotificationReceived", OnNotificationReceived);
-            LogEventCount("OnNotificationCleared", OnNotificationCleared);
-            
-            // Contacts
-            LogEventCount("OnContactAdded", OnContactAdded);
-            LogEventCount("OnContactUpdated", OnContactUpdated);
-            
-            // Progression
-            LogEventCount("OnStoryFlagSet", OnStoryFlagSet);
-            LogEventCount("OnStoryFlagCleared", OnStoryFlagCleared);
-            LogEventCount("OnChapterUnlocked", OnChapterUnlocked);
-
-            // Custom events
-            LogEventCount("OnCharacterStoryReset", OnCharacterStoryReset);
-            
-            Debug.Log("====================================");
-        }
-        
         private static void LogEventCount(string eventName, Delegate eventDelegate)
         {
             int count = eventDelegate?.GetInvocationList()?.Length ?? 0;

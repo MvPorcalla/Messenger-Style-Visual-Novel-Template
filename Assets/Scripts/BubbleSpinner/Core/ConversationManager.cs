@@ -183,8 +183,19 @@ namespace BubbleSpinner.Core
             currentConversationId = null;
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // RESET vs EVICT — READ BEFORE CALLING
+        // ═══════════════════════════════════════════════════════════
+        //
+        // ResetConversation()     → wipes memory + disk (full story reset)
+        // EvictConversationCache() → wipes memory only (disk already cleared)
+        //
+        // Wrong choice = either stale cache or double-delete attempt.
+        // ═══════════════════════════════════════════════════════════
+
         /// <summary>
-        /// Resets a conversation to its initial state (clears save data).
+        /// Resets a conversation to its initial state AND wipes the save file.
+        /// Use this when you want a full story reset — clears both memory and disk.
         /// </summary>
         public void ResetConversation(string conversationId)
         {
@@ -207,9 +218,9 @@ namespace BubbleSpinner.Core
         }
 
         /// <summary>
-        /// Evicts in-memory session cache WITHOUT touching the save file.
-        /// Called by BubbleSpinnerBridge after SaveManager.ResetCharacterStory()
-        /// has already wiped the progress data on disk.
+        /// Evicts the in-memory session cache WITHOUT touching the save file on disk.
+        /// Use this ONLY when the disk data has already been wiped externally
+        /// (e.g. after SaveManager.ResetCharacterStory() has run).
         /// </summary>
         public void EvictConversationCache(string conversationId)
         {
