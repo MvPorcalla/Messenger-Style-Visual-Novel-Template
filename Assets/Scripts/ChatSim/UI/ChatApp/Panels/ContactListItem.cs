@@ -87,6 +87,12 @@ namespace ChatSim.UI.ChatApp.Panels
         
         private void LoadProfileImage(AssetReference assetRef)
         {
+            // Release previous handle if exists
+            if (imageLoadHandle.IsValid())
+            {
+                Addressables.Release(imageLoadHandle);
+            }
+
             imageLoadHandle = assetRef.LoadAssetAsync<Sprite>();
             imageLoadHandle.Completed += OnProfileImageLoaded;
         }

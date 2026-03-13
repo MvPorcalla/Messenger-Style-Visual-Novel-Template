@@ -76,12 +76,12 @@ namespace ChatSim.UI.ChatApp.Panels
         private void CreateContactButton(ConversationAsset conversation)
         {
             GameObject buttonObj = Instantiate(ContactListItemPrefab, contactContainer);
-            
-            var ContactListItem = buttonObj.GetComponent<ContactListItem>();
-            
-            if (ContactListItem != null)
+
+            var contactItem = buttonObj.GetComponent<ContactListItem>();
+
+            if (contactItem != null)
             {
-                ContactListItem.Initialize(conversation, chatController);
+                contactItem.Initialize(conversation, chatController);
             }
             else
             {
