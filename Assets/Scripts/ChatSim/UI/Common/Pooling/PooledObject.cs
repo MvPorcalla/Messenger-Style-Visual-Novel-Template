@@ -1,10 +1,10 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/Core/PooledObject.cs
+// Assets/Scripts/ChatSim/UI/Common/Pooling/PooledObject.cs
 // ════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;
 
-namespace ChatSim.UI.Common.Components
+namespace ChatSim.UI.Common.Pooling
 {
     /// <summary>
     /// Component added to pooled objects to track their source prefab.

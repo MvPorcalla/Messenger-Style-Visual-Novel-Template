@@ -1,11 +1,11 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/ChatSim/UI/Common/Components/PoolingManager.cs
+// Assets/Scripts/ChatSim/UI/Common/Pooling/PoolingManager.cs
 // ════════════════════════════════════════════════════════════════════════
 
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ChatSim.UI.Common.Components
+namespace ChatSim.UI.Common.Pooling
 {
     /// <summary>
     /// Generic object pooling manager for efficient reuse of UI elements and game objects.

@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/UI/ChatApp/Components/AutoResizeText.cs
+// Assets/Scripts/ChatSim/UI/Common/Components/AutoResizeText.cs
 // ════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;

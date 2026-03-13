@@ -7,6 +7,7 @@ using UnityEngine;
 using BubbleSpinner.Data;
 using ChatSim.UI.ChatApp.Components;
 using ChatSim.UI.Common.Components;
+using ChatSim.UI.Common.Pooling;
 
 namespace ChatSim.UI.ChatApp.Controllers
 {
