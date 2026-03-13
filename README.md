@@ -1,11 +1,10 @@
-# VNChatSystem-Base
+# Phone Chat Simulation
 
 **Messenger-Style Visual Novel Template for Unity**
 
-VNChatSystem is a **modular, production-ready phone chat simulation template** built in **Unity** for narrative-driven games.
-It powers messenger-style storytelling with branching dialogue, CG unlocks, and persistent save states—designed specifically for mobile-first visual novels.
+A modular Unity template for building narrative-driven mobile games with a phone chat messenger interface. Built on the **BubbleSpinner** dialogue engine — a standalone, data-driven conversation system that handles branching dialogue, media messages, choices, and save/resume state.
 
-At its core is **BubbleSpinner**, a fully standalone dialogue engine, paired with a complete phone UI simulation (lock screen → home → chat app).
+It powers messenger-style storytelling with branching dialogue, CG unlocks, and persistent save states—designed specifically for mobile-first visual novels.
 
 ---
 
@@ -24,264 +23,235 @@ At its core is **BubbleSpinner**, a fully standalone dialogue engine, paired wit
 
 ---
 
-## 🚀 Key Highlights
+## What's Included
 
-* 📱 **Authentic phone chat UX** (lock screen, contacts, messenger flow)
-* 🎭 **Standalone dialogue engine** (BubbleSpinner)
-* 🌿 **Branching, choice-driven narratives**
-* 💾 **Persistent saves & CG gallery tracking**
-* 🧩 **Highly modular & reusable architecture**
-* ⚡ **Optimized for mobile performance**
+### BubbleSpinner — Dialogue Engine
+A standalone, UI-agnostic dialogue engine. Parses `.bub` dialogue files and executes branching conversations with full save/resume support.
 
----
+- Text messages, player choices, media/CG images
+- Pause points, node jumps, cross-chapter navigation
+- Deterministic message IDs for reliable save state
+- Fully decoupled from Unity UI
 
-## ✨ Features
+### ChatSim — Game Layer
+The full phone simulation built on top of BubbleSpinner.
 
-### 🎭 BubbleSpinner Dialogue Engine (Standalone)
-
-* Custom **`.bub` script format** (human-readable, version-control friendly)
-* Branching dialogue with conditional jumps
-* Multi-chapter conversation support
-* Pause / continue control (`-> ...`)
-* Message read/unread tracking
-* CG trigger & unlock system
-* Persistent conversation state
-* **Zero game-specific dependencies**
-
-> BubbleSpinner can be extracted and reused in any Unity project.
+- Animated chat message display with typing indicators
+- Contact list with conversation selection
+- CG gallery with unlock tracking
+- Contacts app with per-character story reset
+- Atomic save system with backup recovery
+- Scene flow management across 5 scenes
 
 ---
 
-### 📱 Phone Chat UI System
-
-* Messenger-style chat bubbles with animation
-* Typing indicators & message delay simulation
-* Fast-mode toggle for repeat playthroughs
-* Choice buttons with pooling
-* Smart auto-scroll + new message indicator
-* Contact list with avatars
-* Integrated lock screen & phone home flow
-
----
-
-### 💾 Save System
-
-* JSON-based persistence
-* Auto-save on pause, focus loss, and quit
-* Throttled saving for performance
-* Multi-conversation tracking
-* CG gallery persistence
-
----
-
-### 🎨 Asset & Performance
-
-* Addressables for dynamic loading
-* Object pooling (no runtime instantiation spikes)
-* ScriptableObject-driven configuration
-
----
-
-### 🔧 Developer Architecture
-
-* Event-driven (decoupled systems via `GameEvents`)
-* Centralized scene flow manager
-* Bootstrap pattern (`DontDestroyOnLoad`)
-* Context menu debug tools for rapid inspection
-
----
-
-## 📂 Project Structure
+## Scene Structure
 
 ```
-Assets/Scripts/
-├── BubbleSpinner/              # Standalone dialogue engine
-│   ├── Core/
-│   │   ├── BubbleSpinnerParser.cs
-│   │   ├── DialogueFlowExecutor.cs
-│   │   └── ConversationManager.cs
-│   └── Data/
-│       ├── DialogueNode.cs
-│       ├── MessageData.cs
-│       ├── ChoiceData.cs
-│       ├── ConversationState.cs
-│       └── ConversationAsset.cs
-│
-├── ChatSim/                    # Phone chat game implementation
-│   ├── Core/
-│   │   ├── GameBootstrap.cs
-│   │   ├── GameEvents.cs
-│   │   ├── SaveManager.cs
-│   │   └── SceneFlowManager.cs
-│   ├── Data/
-│   │   └── SaveData.cs
-│   └── UI/
-│       ├── Chat/
-│       │   ├── Controllers/
-│       │   ├── Components/
-│       │   └── Screens/
-│       └── Phone/
-│           ├── LockScreenController.cs
-│           └── PhoneHomeController.cs
+00_Disclaimer    → Terms of service (first launch only)
+01_Bootstrap     → Manager initialization (persistent)
+02_Lockscreen    → Entry point after bootstrap
+03_PhoneScreen   → Home screen and app launcher
+04_ChatApp       → Chat interface
 ```
 
 ---
 
-## 🧠 Dialogue Script Example (`.bub`)
+## Quick Start
 
-```bub
+### 1. Set Up Build Settings
+
+**File → Build Settings** — add scenes in this exact order:
+
+| Index | Scene |
+|---|---|
+| 0 | `00_Disclaimer` |
+| 1 | `01_Bootstrap` |
+| 2 | `02_Lockscreen` |
+| 3 | `03_PhoneScreen` |
+| 4 | `04_ChatApp` |
+
+See [Scene Overview](Docs/Scenes_Setup/Scene_Overview.md) for full hierarchy and per-scene setup guides.
+
+---
+
+### 2. Create a Character
+
+Right-click in the Project window:
+**Create → BubbleSpinner → Conversation Asset**
+
+Fill in the Inspector:
+
+```
+[Required]
+characterName     → "Sofia"
+profileImage      → Addressable sprite reference
+chapters          → drag .bub dialogue files in chapter order
+
+[CG Gallery]
+cgAddressableKeys → Addressable keys for each CG e.g. "Sofia/CG1", "Sofia/CG2"
+
+[Optional Profile]
+characterAge        → "24"
+birthdate           → "March 3"
+relationshipStatus  → Single
+occupation          → "Barista"
+bio                 → short tagline shown in contact list
+description         → longer background for detail panel
+personalityTraits   → "Introverted, caring, easily flustered"
+```
+
+> `conversationId` is auto-generated on creation — do not modify it.
+
+---
+
+### 3. Add to Character Database
+
+Open your `CharacterDatabase.asset` in the Inspector.
+
+Either:
+- Drag the new `ConversationAsset` into the `allCharacters` list manually
+- Or right-click the asset → **Auto-Find All Characters** to populate all assets in the project at once
+
+---
+
+### 4. Write Dialogue
+
+Create a `.bub` file and assign it to the `chapters` list on your `ConversationAsset`.
+
+```
+contact: Sofia
+
 title: Start
 ---
-Alice: Hey! How was your day?
+Sofia: "Hey, are you there?"
+
 -> ...
 
-title: ChoicePoint
----
-Alice: Want to grab coffee tomorrow?
+Player: "..."
+
 >> choice
--> "Sure"
-    #Player: Sounds good!
-    <<jump Happy>>
--> "I'm busy"
-    #Player: Maybe another time.
-    <<jump Sad>>
->> endchoice
+    -> "What's wrong?"
+        # Player: "What's wrong? You sound worried."
+        <<jump Node_Concern>>
 
-title: Happy
----
->> media Alice path:CG/alice_happy.png unlock:true
-Alice: Great! See you at 2 PM.
-<<jump End>>
+    -> "Not now"
+        # Player: "Can't talk right now."
+        <<jump Node_Dismiss>>
 
-title: Sad
----
-Alice: Oh… okay.
-<<jump End>>
-
-title: End
 ===
+
+title: Node_Concern
+---
+Sofia: "It's nothing. Never mind."
+
+<<jump EndNode>>
+```
+
+See [.bub Format Reference](Assets/Scripts/BubbleSpinner/Docs/FORMAT.md) for the full syntax guide.
+
+---
+
+## Documentation
+
+### Getting Started
+- [Quick Start](Docs/QuickStart.md) — From fresh project to first conversation running in Play Mode
+- [Addressables Setup](Docs/Addressables_Setup.md) — Setting up CG images with Addressables
+
+### Scene Setup
+- [Scene Overview](Docs/Scenes_Setup/Scene_Overview.md) — Build settings, scene order, and per-scene summary
+- [00_Disclaimer Setup](Docs/Scenes_Setup/00_Disclaimer_Setup.md) — First-launch TOS flow
+- [01_Bootstrap Setup](Docs/Scenes_Setup/01_Bootstrap_Setup.md) — Core manager initialization
+- [02_Lockscreen Setup](Docs/Scenes_Setup/02_Lockscreen_Setup.md) — Lock screen entry point
+- [03_PhoneScreen Setup](Docs/Scenes_Setup/03_PhoneScreen_Setup.md) — Gallery, contacts, navigation, home screen
+- [04_ChatApp Setup](Docs/Scenes_Setup/04_ChatApp_Setup.md) — Chat UI, message spawning, timing, scroll
+
+### BubbleSpinner
+- [BubbleSpinner Code Reference](Assets/Scripts/BubbleSpinner/Docs/BubbleSpinner.md) — Full script documentation
+- [.bub Format Reference](Assets/Scripts/BubbleSpinner/Docs/FORMAT.md) — Complete `.bub` syntax guide
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────┐
+│           BubbleSpinner             │  Standalone dialogue engine
+│  Parser → Executor → Manager        │  No Unity UI dependencies
+└────────────────┬────────────────────┘
+                 │ IBubbleSpinnerCallbacks
+┌────────────────▼────────────────────┐
+│         BubbleSpinnerBridge         │  Persistence layer
+│  Save / Load / Delete / Reset       │  Connects engine to ChatSim
+└────────────────┬────────────────────┘
+                 │ GameEvents
+┌────────────────▼────────────────────┐
+│             ChatSim                 │  Game layer
+│  Bootstrap → SaveManager → UI       │  Scene flow, phone UI, gallery
+└─────────────────────────────────────┘
 ```
 
 ---
 
-## 🧩 Starting a Conversation (Code)
+## Dialogue Format (.bub)
 
-```csharp
-using ChatSim.Core;
-using BubbleSpinner.Data;
+```
+contact: Sofia
 
-public void OpenChat(ConversationAsset asset)
-{
-    GameBootstrap.Conversation.StartConversation(asset);
-}
+title: Start
+---
+Sofia: "Hey, are you there?"
+Sofia: "I need to talk to you."
+
+-> ...
+
+Player: "..."
+
+>> choice
+    -> "What's wrong?"
+        # Player: "What's wrong? You sound worried."
+        <<jump Node_Concern>>
+
+    -> "Not now"
+        # Player: "Can't talk right now."
+        <<jump Node_Dismiss>>
+
+===
+
+title: Node_Concern
+---
+Sofia: "It's nothing. Never mind."
+
+<<jump EndNode>>
 ```
 
-UI components automatically subscribe to executor events.
+See [.bub Format Reference](Assets/Scripts/BubbleSpinner/Docs/FORMAT.md) for the full syntax guide.
 
 ---
 
-## 🔌 Using BubbleSpinner Standalone
+## Goals
 
-Copy:
-
-```
-Assets/Scripts/BubbleSpinner/
-```
-
-Minimal usage:
-
-```csharp
-var executor = new DialogueExecutor();
-executor.Initialize(asset, state);
-
-executor.OnMessagesReady += DisplayMessages;
-executor.OnChoicesReady += ShowChoices;
-executor.OnConversationEnd += HandleEnd;
-
-executor.ContinueFromCurrentState();
-```
-
----
-
-## 🎮 Scene Flow
-
-### Required Scenes
-
-1. **01_Bootstrap** – Persistent managers
-2. **02_LockScreen**
-3. **03_PhoneHome**
-4. **04_ChatApp**
-
-### Bootstrap Hierarchy
-
-```
-GameBootstrap
-├── SaveManager
-├── SceneFlowManager
-└── ConversationManager
-```
-
----
-
-## 📘 `.bub` Syntax Reference
-
-| Command     | Purpose                |
-| ----------- | ---------------------- |
-| `title:`    | Define node            |
-| `<<jump>>`  | Jump to node           |
-| `-> ...`    | Pause                  |
-| `>> choice` | Begin choice           |
-| `-> "text"` | Choice option          |
-| `#Speaker:` | Player reply           |
-| `>> media`  | Show image / unlock CG |
-| `===`       | End file               |
-| `//`        | Comment                |
-
----
-
-## 🎯 Project Goals
-
-* Rapid narrative prototyping
-* Scalable multi-character VN architecture
-* Reusable dialogue engine
-* Clean separation of systems
+- Rapid narrative prototyping
+- Scalable multi-character visual novel architecture
+- Reusable dialogue engine with zero game-specific dependencies
+- Clean separation between engine, UI, and game logic
 
 Built as a **foundation**, not a one-off game.
 
 ---
 
-## 🛠 Customization Notes
+## License
 
-* Message timing → `ChatTimingController.cs`
-* New message types → extend `MessageData`
-* Save path → `SaveManager.cs`
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 📄 License
-
-**All rights reserved.**
-No redistribution or commercial use without permission.
-
----
-
-## 🤝 Contributing
-
-This is an internal base framework.
-If extending:
-
-* Keep BubbleSpinner isolated
-* Document `.bub` extensions
-* Optimize for large dialogue graphs
-
----
-
-## 📬 Contact
+## Contact
 
 **Melvin Porcalla**
-GitHub: [https://github.com/MvPorcalla](https://github.com/MvPorcalla)
-Email: [scryptid1@gmail.com](mailto:scryptid1@gmail.com)
+GitHub: [MvPorcalla](https://github.com/MvPorcalla)
+Email: scryptid1@gmail.com
 
 ---
 
-**Built for narrative-first developers who care about structure, performance, and clean systems.**
+*Built for narrative-first developers who care about structure, performance, and clean systems.*

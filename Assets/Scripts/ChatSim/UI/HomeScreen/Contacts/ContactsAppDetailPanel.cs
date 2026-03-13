@@ -1,5 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════
 // Assets/Scripts/UI/HomeScreen/Contacts/ContactsAppDetailPanel.cs
+// Note: This panel is for showing character details when a contact is tapped in the Contacts app.
+// not implemented yet
 // ════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;

@@ -50,28 +50,27 @@ Assets/Scripts/
         │   └── FullscreenCGViewer.cs       # 
         │
         ├── Common/                         # Shared UI utilities
-        │   ├── Components/
-        │   │   ├── AutoResizeText.cs       # Used by MessageBubble
-        │   │   ├── PooledObject.cs         # Pooling system
-        │   │   └── PoolingManager.cs       # Pooling system
-        │   │
-        │   └── Screens/                    # Scene Specific Controller
-        │       ├── DisclaimerScreen.cs     # First-time disclaimer
-        │       └── LockScreen.cs           # Lock screen
+        │   └── Components/
+        │       ├── AutoResizeText.cs       # Used by MessageBubble
+        │       ├── PooledObject.cs         # Pooling system
+        │       └── PoolingManager.cs       # Pooling system    
         │
-        └── HomeScreen/                        # Phone operating system
-            ├── Contacts/                       # 
-            │   ├── ContactsAppDetails.cs
-            │   ├── ContactsAppItems.cs
-            │   ├── ContactsAppPanels.cs
-            │   └── ResetConfirmationDialog.cs
-            │
-            ├── Gallery/                       # 
-            │   ├── GalleryController.cs
-            │   ├── GalleryFullscreenVeiwer.cs
-            │   └── GalleryThumbnailItems.cs
-            │
-            ├── HomeScreenController.cs          # Home screen & app launcher
-            └── HomeScreenNavButtons.cs          # 
-
+        ├── HomeScreen/                        # Phone operating system
+        │   ├── Contacts/                       # 
+        │   │   ├── ContactsAppDetails.cs       # (future Feature)
+        │   │   ├── ContactsAppItems.cs
+        │   │   ├── ContactsAppPanels.cs
+        │   │   └── ResetConfirmationDialog.cs
+        │   │
+        │   ├── Gallery/                       # 
+        │   │   ├── GalleryController.cs
+        │   │   ├── GalleryFullscreenVeiwer.cs
+        │   │   └── GalleryThumbnailItems.cs
+        │   │
+        │   ├── HomeScreenController.cs          # Home screen & app launcher
+        │   └── HomeScreenNavButtons.cs          # 
+        │
+        └── Screens/                    # Scene Specific Controller
+            ├── DisclaimerScreen.cs     # First-time disclaimer
+            └── LockScreen.cs           # Lock screen
 ```

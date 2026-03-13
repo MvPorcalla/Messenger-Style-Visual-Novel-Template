@@ -11,7 +11,7 @@ using ChatSim.Core;
 using UnityEditor;
 #endif
 
-namespace ChatSim.UI.Common.Screens
+namespace ChatSim.UI.Screens
 {
     /// <summary>
     /// CRITICAL: This scene loads FIRST (before Bootstrap)

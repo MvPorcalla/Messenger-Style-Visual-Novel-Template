@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using ChatSim.Core;
 
-namespace ChatSim.UI.Common.Screens
+namespace ChatSim.UI.Screens
 {
     /// <summary>
     /// Manages the lock screen (02_LockScreen scene)
