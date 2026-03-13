@@ -59,116 +59,9 @@ The full phone simulation built on top of BubbleSpinner.
 
 ## Quick Start
 
-### 1. Set Up Build Settings
+Create a `ConversationAsset`, write a `.bub` dialogue file, add it to the `CharacterDatabase`, and press Play.
 
-**File → Build Settings** — add scenes in this exact order:
-
-| Index | Scene |
-|---|---|
-| 0 | `00_Disclaimer` |
-| 1 | `01_Bootstrap` |
-| 2 | `02_Lockscreen` |
-| 3 | `03_PhoneScreen` |
-| 4 | `04_ChatApp` |
-
-See [Scene Overview](Docs/Scenes_Setup/Scene_Overview.md) for full hierarchy and per-scene setup guides.
-
----
-
-### 2. Create a Character
-
-Right-click in the Project window:
-**Create → BubbleSpinner → Conversation Asset**
-
-Fill in the Inspector:
-
-```
-[Required]
-characterName     → "Sofia"
-profileImage      → Addressable sprite reference
-chapters          → drag .bub dialogue files in chapter order
-
-[CG Gallery]
-cgAddressableKeys → Addressable keys for each CG e.g. "Sofia/CG1", "Sofia/CG2"
-
-[Optional Profile]
-characterAge        → "24"
-birthdate           → "March 3"
-relationshipStatus  → Single
-occupation          → "Barista"
-bio                 → short tagline shown in contact list
-description         → longer background for detail panel
-personalityTraits   → "Introverted, caring, easily flustered"
-```
-
-> `conversationId` is auto-generated on creation — do not modify it.
-
----
-
-### 3. Add to Character Database
-
-Open your `CharacterDatabase.asset` in the Inspector.
-
-Either:
-- Drag the new `ConversationAsset` into the `allCharacters` list manually
-- Or right-click the asset → **Auto-Find All Characters** to populate all assets in the project at once
-
----
-
-### 4. Write Dialogue
-
-Create a `.bub` file and assign it to the `chapters` list on your `ConversationAsset`.
-
-```
-contact: Sofia
-
-title: Start
----
-Sofia: "Hey, are you there?"
-
--> ...
-
-Player: "..."
-
->> choice
-    -> "What's wrong?"
-        # Player: "What's wrong? You sound worried."
-        <<jump Node_Concern>>
-
-    -> "Not now"
-        # Player: "Can't talk right now."
-        <<jump Node_Dismiss>>
-
-===
-
-title: Node_Concern
----
-Sofia: "It's nothing. Never mind."
-
-<<jump EndNode>>
-```
-
-See [.bub Format Reference](Assets/Scripts/BubbleSpinner/Docs/FORMAT.md) for the full syntax guide.
-
----
-
-## Documentation
-
-### Getting Started
-- [Quick Start](Docs/QuickStart.md) — From fresh project to first conversation running in Play Mode
-- [Addressables Setup](Docs/Addressables_Setup.md) — Setting up CG images with Addressables
-
-### Scene Setup
-- [Scene Overview](Docs/Scenes_Setup/Scene_Overview.md) — Build settings, scene order, and per-scene summary
-- [00_Disclaimer Setup](Docs/Scenes_Setup/00_Disclaimer_Setup.md) — First-launch TOS flow
-- [01_Bootstrap Setup](Docs/Scenes_Setup/01_Bootstrap_Setup.md) — Core manager initialization
-- [02_Lockscreen Setup](Docs/Scenes_Setup/02_Lockscreen_Setup.md) — Lock screen entry point
-- [03_PhoneScreen Setup](Docs/Scenes_Setup/03_PhoneScreen_Setup.md) — Gallery, contacts, navigation, home screen
-- [04_ChatApp Setup](Docs/Scenes_Setup/04_ChatApp_Setup.md) — Chat UI, message spawning, timing, scroll
-
-### BubbleSpinner
-- [BubbleSpinner Code Reference](Assets/Scripts/BubbleSpinner/Docs/BubbleSpinner.md) — Full script documentation
-- [.bub Format Reference](Assets/Scripts/BubbleSpinner/Docs/FORMAT.md) — Complete `.bub` syntax guide
+→ [Full Quick Start Guide](Docs/QuickStart.md)
 
 ---
 
@@ -226,6 +119,29 @@ Sofia: "It's nothing. Never mind."
 ```
 
 See [.bub Format Reference](Assets/Scripts/BubbleSpinner/Docs/FORMAT.md) for the full syntax guide.
+
+---
+
+## Documentation
+
+### Getting Started
+- [Quick Start](Docs/QuickStart.md) — Add a character and test it in Play Mode
+- [Addressables Setup](Docs/Addressables_Setup.md) — Setting up CG images with Addressables
+
+### Project
+- [Project Structure](Docs/Project_Structure.md) — Full folder and file map
+
+### Scene Setup
+- [Scene Overview](Docs/Scenes_Setup/Scene_Overview.md) — Build settings, scene order, and per-scene summary
+- [00_Disclaimer Setup](Docs/Scenes_Setup/00_Disclaimer_Setup.md) — First-launch TOS flow
+- [01_Bootstrap Setup](Docs/Scenes_Setup/01_Bootstrap_Setup.md) — Core manager initialization
+- [02_Lockscreen Setup](Docs/Scenes_Setup/02_Lockscreen_Setup.md) — Lock screen entry point
+- [03_PhoneScreen Setup](Docs/Scenes_Setup/03_PhoneScreen_Setup.md) — Gallery, contacts, navigation, home screen
+- [04_ChatApp Setup](Docs/Scenes_Setup/04_ChatApp_Setup.md) — Chat UI, message spawning, timing, scroll
+
+### BubbleSpinner
+- [BubbleSpinner Code Reference](Assets/Scripts/BubbleSpinner/Docs/BubbleSpinner.md) — Full script documentation
+- [.bub Format Reference](Assets/Scripts/BubbleSpinner/Docs/FORMAT.md) — Complete `.bub` syntax guide
 
 ---
 
