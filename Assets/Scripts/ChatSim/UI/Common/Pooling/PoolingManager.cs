@@ -59,9 +59,7 @@ namespace ChatSim.UI.Common.Pooling
             if (pools[prefab].Count > 0)
             {
                 obj = pools[prefab].Dequeue();
-
-                if (parent != null)
-                    obj.transform.SetParent(parent, false);
+                obj.transform.SetParent(parent, false);
             }
             else
             {
@@ -72,6 +70,7 @@ namespace ChatSim.UI.Common.Pooling
                     pooledObject = obj.AddComponent<PooledObject>();
 
                 pooledObject.SetPrefab(prefab);
+                pooledObject.PreserveContent = true;
             }
 
             // Reset transform
@@ -93,6 +92,13 @@ namespace ChatSim.UI.Common.Pooling
         {
             if (obj == null) return;
 
+            if (poolRoot == null)
+            {
+                Debug.LogWarning("[PoolingManager] Recycle called before Awake — destroying object instead");
+                Destroy(obj);
+                return;
+            }
+
             var pooledObject = obj.GetComponent<PooledObject>();
             if (pooledObject == null || pooledObject.Prefab == null)
             {
@@ -103,7 +109,9 @@ namespace ChatSim.UI.Common.Pooling
 
             GameObject prefab = pooledObject.Prefab;
 
-            // Clear dynamic content if needed
+            // ClearDynamicContent is a fallback for objects with no ResetForPool() implementation.
+            // Spawners (ChatMessageSpawner, ChatChoiceSpawner) call ResetForPool() before Recycle —
+            // those objects should have PreserveContent = true to skip this fallback.
             if (!pooledObject.PreserveContent)
                 ClearDynamicContent(obj);
 
@@ -137,6 +145,7 @@ namespace ChatSim.UI.Common.Pooling
                     pooledObject = obj.AddComponent<PooledObject>();
 
                 pooledObject.SetPrefab(prefab);
+                pooledObject.PreserveContent = true;
                 pools[prefab].Enqueue(obj);
             }
 
@@ -178,13 +187,8 @@ namespace ChatSim.UI.Common.Pooling
         /// </summary>
         private void ClearDynamicContent(GameObject obj)
         {
-            var textComponents = obj.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true);
-            foreach (var text in textComponents)
-                text.text = string.Empty;
-
-            var button = obj.GetComponentsInChildren<UnityEngine.UI.Button>(true);
-            foreach (var btn in button)
-                btn.onClick.RemoveAllListeners();
+            Debug.LogError($"[PoolingManager] {obj.name} recycled without ResetForPool() implementation. " +
+                        $"Add ResetForPool() to the component or set PreserveContent = true on its PooledObject.");
         }
 
         // ═══════════════════════════════════════════════════════════
