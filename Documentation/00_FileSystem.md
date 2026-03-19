@@ -55,20 +55,27 @@ Assets/Scripts/
         │       ├── PooledObject.cs         # Pooling system
         │       └── PoolingManager.cs       # Pooling system    
         │
-        ├── HomeScreen/                        # Phone operating system
-        │   ├── Contacts/                       # 
+        ├── HomeScreen/
+        │   ├── Contacts/
         │   │   ├── ContactsAppDetails.cs       # (future Feature)
         │   │   ├── ContactsAppItems.cs
         │   │   ├── ContactsAppPanels.cs
         │   │   └── ResetConfirmationDialog.cs
         │   │
-        │   ├── Gallery/                       # 
+        │   ├── Gallery/
         │   │   ├── GalleryController.cs
         │   │   ├── GalleryFullscreenVeiwer.cs
         │   │   └── GalleryThumbnailItems.cs
         │   │
+        │   ├── Setting/
+        │   │   └── SettingPanel.cs
+        │   │
         │   ├── HomeScreenController.cs          # Home screen & app launcher
         │   └── HomeScreenNavButtons.cs          # 
+        │
+        ├── Overlay/                        # Phone operating system
+        │   ├── Dialog/
+        │       └── ResetConfirmationDialog.cs
         │
         └── Screens/                    # Scene Specific Controller
             ├── DisclaimerScreen.cs     # First-time disclaimer

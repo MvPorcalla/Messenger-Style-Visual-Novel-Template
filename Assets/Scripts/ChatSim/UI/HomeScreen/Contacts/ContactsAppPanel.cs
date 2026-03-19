@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using BubbleSpinner.Data;
+using ChatSim.UI.Overlay.Dialogs;
 
 namespace ChatSim.UI.HomeScreen.Contacts
 {

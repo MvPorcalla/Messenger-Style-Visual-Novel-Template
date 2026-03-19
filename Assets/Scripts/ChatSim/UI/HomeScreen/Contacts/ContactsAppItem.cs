@@ -10,6 +10,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using BubbleSpinner.Data;
 using ChatSim.Core;
+using ChatSim.UI.Overlay.Dialogs;
 
 namespace ChatSim.UI.HomeScreen.Contacts
 {
@@ -210,9 +211,9 @@ namespace ChatSim.UI.HomeScreen.Contacts
             if (_useConfirmationDialog && _confirmationDialog != null)
             {
                 _confirmationDialog.Show(
-                    characterName: _conversationAsset.characterName,
-                    conversationId: _conversationAsset.ConversationId,
-                    caller: this
+                    title: $"Reset {_conversationAsset.characterName}?",
+                    message: "This will erase all chat history and progress for this character. This cannot be undone.",
+                    onConfirmed: ExecuteReset
                 );
                 return;
             }

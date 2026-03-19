@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ChatSim.Core;
+using ChatSim.UI.Overlay.Dialogs;
 
 namespace ChatSim.UI.HomeScreen.Settings
 {
@@ -61,7 +62,7 @@ namespace ChatSim.UI.HomeScreen.Settings
 
         [Header("Data")]
         [SerializeField] private Button resetAllButton;
-        [SerializeField] private SettingsResetAllDialog resetAllDialog;
+        [SerializeField] private ResetConfirmationDialog resetAllDialog;
 
         // ═══════════════════════════════════════════════════════════
         // ░ INSPECTOR REFERENCES — ABOUT
@@ -222,7 +223,11 @@ namespace ChatSim.UI.HomeScreen.Settings
 
             if (resetAllDialog != null)
             {
-                resetAllDialog.Show(OnResetAllConfirmed);
+                resetAllDialog.Show(
+                    title: "Reset All Stories?",
+                    message: "This will erase ALL chat history and progress for every character. This cannot be undone.",
+                    onConfirmed: OnResetAllConfirmed
+                );
             }
             else
             {
