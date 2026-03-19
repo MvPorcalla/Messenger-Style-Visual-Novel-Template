@@ -6,6 +6,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using ChatSim.Core;
 
 namespace ChatSim.UI.ChatApp.Components
 {
@@ -22,13 +23,21 @@ namespace ChatSim.UI.ChatApp.Components
             if (buttonText != null)
             {
                 buttonText.text = text;
+                buttonText.fontSize = PlayerPrefs.GetFloat(PlayerPrefKeys.TextSize, PlayerPrefKeys.DefaultTextSize);
             }
-            
+
             if (button != null)
             {
                 button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(() => onClick?.Invoke());
             }
+        }
+
+        // Called by ChatChoiceSpawner when applying text size changes from settings
+        public void ApplyFontSize(float fontSize)
+        {
+            if (buttonText != null)
+                buttonText.fontSize = fontSize;
         }
 
         /// <summary>

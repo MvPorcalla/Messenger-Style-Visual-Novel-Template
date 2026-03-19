@@ -23,6 +23,7 @@ Assets/Scripts/
     │   ├── BubbleSpinnerBridge.cs        # Implements IBubbleSpinnerCallbacks — save/load/reset
     │   ├── GameBootstrap.cs              # Entry point — initializes all managers, loads first scene
     │   ├── GameEvents.cs                 # Static event bus — decoupled cross-system communication
+    │   ├── PlayerPrefKeys.cs             # Shared PlayerPrefs key constants and default values.
     │   ├── SaveManager.cs                # Reads and writes save data to disk with backup recovery
     │   ├── SceneFlowManager.cs           # Handles scene transitions and load validation
     │   └── SceneNames.cs                 # String constants for all scene names

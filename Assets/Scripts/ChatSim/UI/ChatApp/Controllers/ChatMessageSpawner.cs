@@ -8,6 +8,7 @@ using BubbleSpinner.Data;
 using ChatSim.UI.ChatApp.Components;
 using ChatSim.UI.Common.Components;
 using ChatSim.UI.Common.Pooling;
+using ChatSim.Core;
 
 namespace ChatSim.UI.ChatApp.Controllers
 {
@@ -70,6 +71,20 @@ namespace ChatSim.UI.ChatApp.Controllers
                 poolingManager.PreWarm(systemBubblePrefab, 3);
 
             Debug.Log("[ChatMessageSpawner] Pools prewarmed");
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // ░ EVENT HANDLERS
+        // ═══════════════════════════════════════════════════════════
+
+        private void OnEnable()
+        {
+            GameEvents.OnTextSizeChanged += OnTextSizeChanged;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.OnTextSizeChanged -= OnTextSizeChanged;
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -209,6 +224,26 @@ namespace ChatSim.UI.ChatApp.Controllers
                 default:
                     return null;
             }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // ░ TEXT SIZE
+        // ═══════════════════════════════════════════════════════════
+
+        private void OnTextSizeChanged(float fontSize)
+        {
+            ApplyFontSizeToAllBubbles(fontSize);
+        }
+
+        private void ApplyFontSizeToAllBubbles(float fontSize)
+        {
+            foreach (var bubble in pooledBubbles)
+            {
+                if (bubble == null) continue;
+                bubble.GetComponent<TextMessageBubble>()?.ApplyFontSize(fontSize);
+            }
+
+            Debug.Log($"[ChatMessageSpawner] Font size applied to {pooledBubbles.Count} bubbles: {fontSize}");
         }
 
         // ═══════════════════════════════════════════════════════════
