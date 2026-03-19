@@ -187,7 +187,9 @@ ChoiceButton (root)
 ```
 ContactListItem (root)   ← Button component here
 ├── ProfileIMG           (Image)
-├── ProfileName          (TMP)
+├── InfoGroup            (GameObject)
+│   ├── ProfileName      (TMP)
+│   └── LastMessageText  (TMP — smaller font, grey color)
 └── Badge                (GameObject — child with any visual)
 ```
 
@@ -196,12 +198,15 @@ ContactListItem (root)   ← Button component here
 2. Add **`ContactListItem.cs`** to root.
 3. Wire Inspector:
    ```
-   button       → Button on root
-   profileIMG   → ProfileIMG (Image)
-   profileName  → ProfileName (TMP)
-   badge        → Badge (GameObject)
+   button          → Button on root
+   profileIMG      → ProfileIMG (Image)
+   profileName     → InfoGroup/ProfileName (TMP)
+   lastMessageText → InfoGroup/LastMessageText (TMP)
+   badge           → Badge (GameObject)
    ```
 4. Save as `ContactListItem.prefab`.
+
+> `lastMessageText` displays the last message sent in the conversation — text messages truncate at 40 characters with ellipsis, image messages show `"Sent an image."` or `"You sent an image."`, and blank if the conversation has not started. If `lastMessageText` is left unassigned in the Inspector, the preview silently does nothing — no error.
 
 ---
 
@@ -426,6 +431,16 @@ ContactListPanel
 ☐ ContactListItemPrefab
 ☐ chatController
 
+ContactListItem.prefab
+☐ Button on root
+☐ ContactListItem.cs attached
+☐ button assigned
+☐ profileIMG assigned
+☐ profileName assigned (InfoGroup/ProfileName)
+☐ lastMessageText assigned (InfoGroup/LastMessageText)
+☐ badge assigned
+☐ Prefab saved
+
 ChatAppNavButtons
 ☐ homeButton
 ☐ backButton
@@ -454,7 +469,16 @@ Drag `ChatChoices` itself (the same GameObject `ChatChoiceSpawner` is on) into t
 Any bubble instances left in `Content` from prefab testing will persist at runtime. Delete all children of `Content` except `TypingIndicator` before saving the scene.
 
 **Contacts don't populate**
-`characterDatabase` must be assigned on `ContactListPanel`. The list is built in `Start()` — if the database is null at that point, nothing spawns.
+`characterDatabase` must be assigned on `ContactListPanel`. The list is built in `OnEnable()` — if the database is null when the panel activates, nothing spawns.
+
+**Last message preview doesn't update after returning from chat**
+`ContactListPanel` rebuilds the list in `OnEnable()` — this fires automatically when `SwitchToContactList()` calls `contactListPanel.SetActive(true)`. If the preview is stale, confirm `OnEnable()` is not being suppressed by the panel already being active when the scene loads.
+
+**Last message preview shows blank for all contacts**
+`lastMessageText` on `ContactListItem` is not assigned in the prefab Inspector. Open the prefab, find `InfoGroup/LastMessageText`, and wire it to the `lastMessageText` field on `ContactListItem`.
+
+**Last message preview shows wrong text**
+`GetLastMessagePreview()` walks `messageHistory` backwards and skips system messages and image messages. If the preview looks wrong, check the `messageHistory` list in save data — open the save file at `Application.persistentDataPath/Saves/ChatSimData/game_save.json` and inspect the `messageHistory` array for that conversation.
 
 **CG images show blank on click**
 `ImageMessageBubble` needs a valid Addressable key set in the dialogue data (`path:` field). If the key is missing or misspelled, the load fails silently. Check the Console for `[ImageMessageBubble] ✗ Load failed`.

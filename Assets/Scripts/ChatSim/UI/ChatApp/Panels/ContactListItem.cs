@@ -24,6 +24,7 @@ namespace ChatSim.UI.ChatApp.Panels
         [SerializeField] private Button button;
         [SerializeField] private Image profileIMG;
         [SerializeField] private TextMeshProUGUI profileName;
+        [SerializeField] private TextMeshProUGUI lastMessageText;
         [SerializeField] private GameObject badge;
         
         #endregion
@@ -33,6 +34,7 @@ namespace ChatSim.UI.ChatApp.Panels
         private ConversationAsset conversationAsset;
         private ChatAppController chatController;
         private AsyncOperationHandle<Sprite> imageLoadHandle;
+        private const int MaxPreviewLength = 40;
         
         #endregion
         
@@ -42,7 +44,7 @@ namespace ChatSim.UI.ChatApp.Panels
         /// Initialize the button with conversation data
         /// Called by ContactListPanel when creating buttons
         /// </summary>
-        public void Initialize(ConversationAsset asset, ChatAppController controller)
+        public void Initialize(ConversationAsset asset, ChatAppController controller, string lastMessage)
         {
             conversationAsset = asset;
             chatController = controller;
@@ -79,6 +81,16 @@ namespace ChatSim.UI.ChatApp.Panels
             {
                 Debug.LogError("[ContactListItem] Button component not assigned!");
             }
+
+            if (lastMessageText != null)
+            {
+                if (string.IsNullOrEmpty(lastMessage))
+                    lastMessageText.text = "";
+                else if (lastMessage.Length > MaxPreviewLength)
+                    lastMessageText.text = lastMessage[..MaxPreviewLength] + "...";
+                else
+                    lastMessageText.text = lastMessage;
+            }
         }
         
         #endregion
@@ -87,11 +99,18 @@ namespace ChatSim.UI.ChatApp.Panels
         
         private void LoadProfileImage(AssetReference assetRef)
         {
-            // Release previous handle if exists
-            if (imageLoadHandle.IsValid())
+            // If already loaded, reuse the result directly — do not call LoadAssetAsync again
+            if (assetRef.OperationHandle.IsValid() && assetRef.OperationHandle.IsDone)
             {
-                Addressables.Release(imageLoadHandle);
+                var sprite = assetRef.OperationHandle.Convert<Sprite>().Result;
+                if (sprite != null && profileIMG != null)
+                    profileIMG.sprite = sprite;
+                return;
             }
+
+            // Release our own previous handle if we have one
+            if (imageLoadHandle.IsValid())
+                Addressables.Release(imageLoadHandle);
 
             imageLoadHandle = assetRef.LoadAssetAsync<Sprite>();
             imageLoadHandle.Completed += OnProfileImageLoaded;

@@ -5,8 +5,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using BubbleSpinner.Data;
-using ChatSim.UI.ChatApp;
 using ChatSim.UI.ChatApp.Controllers;
+using ChatSim.Core;
 
 namespace ChatSim.UI.ChatApp.Panels
 {
@@ -32,7 +32,7 @@ namespace ChatSim.UI.ChatApp.Panels
         
         #region Unity Lifecycle
         
-        private void Start()
+        private void OnEnable()
         {
             PopulateContactList();
         }
@@ -76,17 +76,43 @@ namespace ChatSim.UI.ChatApp.Panels
         private void CreateContactButton(ConversationAsset conversation)
         {
             GameObject buttonObj = Instantiate(ContactListItemPrefab, contactContainer);
-
             var contactItem = buttonObj.GetComponent<ContactListItem>();
 
             if (contactItem != null)
             {
-                contactItem.Initialize(conversation, chatController);
+                string lastMessage = GetLastMessagePreview(conversation.ConversationId);
+                contactItem.Initialize(conversation, chatController, lastMessage);
             }
             else
             {
                 Debug.LogError("[ContactListPanel] ContactListItem component missing on prefab!");
             }
+        }
+
+        private string GetLastMessagePreview(string conversationId)
+        {
+            var saveData = GameBootstrap.Save?.GetOrCreateSaveData();
+            var state = saveData?.conversationStates
+                .Find(s => s.conversationId == conversationId);
+
+            if (state == null || state.messageHistory == null || state.messageHistory.Count == 0)
+                return "";
+
+            for (int i = state.messageHistory.Count - 1; i >= 0; i--)
+            {
+                var msg = state.messageHistory[i];
+
+                if (msg.IsSystemMessage)
+                    continue;
+
+                if (msg.type == MessageData.MessageType.Image)
+                    return msg.IsPlayerMessage ? "You sent an image." : "Sent an image.";
+
+                if (msg.type == MessageData.MessageType.Text)
+                    return msg.content;
+            }
+
+            return "";
         }
         
         private void ClearContactList()

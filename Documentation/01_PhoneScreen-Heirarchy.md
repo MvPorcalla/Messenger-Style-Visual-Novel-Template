@@ -52,29 +52,19 @@
     │   │   │   │               └── ResetButton 
     │   │   │   │                   └── Text 
     │   │   │   │
-    │   │   │   ├── ContactsAppDetailPanel          ← ContactsAppDetailPanel.cs (active in scene) [FUTURE]
-    │   │   │   │   ├── Overlay
-    │   │   │   │   └── DetailCard
-    │   │   │   │       ├── CloseButton
-    │   │   │   │       ├── ProfileImage
-    │   │   │   │       ├── NameText
-    │   │   │   │       ├── InfoGroup
-    │   │   │   │       │   ├── AgeText
-    │   │   │   │       │   ├── BirthdateText
-    │   │   │   │       │   ├── BioText
-    │   │   │   │       │   └── DescriptionText
-    │   │   │   │       └── ResetButton
-    │   │   │   │           └── Text ("Reset Story")   
-    │   │   │   │
-    │   │   │   └── ResetConfirmationDialog             ← ATTACH [ResetConfirmationDialog.cs] (Do not Put this panel Inactive) (active in scene)
-    │   │   │       └── ConfirmationDialog
-    │   │   │           └── ContentPanel   
-    │   │   │               ├── TitleText
-    │   │   │               ├── MessageText 
-    │   │   │               ├── CancelButton
-    │   │   │               │   └── Text
-    │   │   │               └── ResetButton 
-    │   │   │                   └── Text    
+    │   │   │   └── ContactsAppDetailPanel          ← ContactsAppDetailPanel.cs (active in scene) [FUTURE]
+    │   │   │       ├── Overlay
+    │   │   │       └── DetailCard
+    │   │   │           ├── CloseButton
+    │   │   │           ├── ProfileImage
+    │   │   │           ├── NameText
+    │   │   │           ├── InfoGroup
+    │   │   │           │   ├── AgeText
+    │   │   │           │   ├── BirthdateText
+    │   │   │           │   ├── BioText
+    │   │   │           │   └── DescriptionText
+    │   │   │           └── ResetButton
+    │   │   │               └── Text ("Reset Story")     
     │   │   │
     │   │   └── SettingsPanel                       ← ATTACH THIS SCRIPT — INACTIVE by default
     │   │       └── ScrollView
@@ -99,15 +89,15 @@
     │   │                       ├── SectionHeader   (TMP — "About")
     │   │                       └── VersionText     (TMP)
     │   │
-    │   ├── NavigationBar   [QuitConfirmationManager] ← Attach script here
+    │   ├── NavigationBar   [HomeScreenNavButtons.cs] ← Attach script here
     │   │   ├── QuitButton
     │   │   ├── HomeButton
     │   │   └── BackButton
     │   │
     │   ├── Overlays (CAN STACK)                ← new GameObject — ACTIVE
     │   │   ├── ResetConfirmationDialog         ← ResetConfirmationDialog.cs — ACTIVE
-    │   │   │   └── ConfirmationDialog
-    │   │   │       └── ContentPanel              ← INACTIVE
+    │   │   │   └── ResetDialog                 ← INACTIVE
+    │   │   │       └── ContentPanel
     │   │   │           └── Content
     │   │   │               ├── TitleText           (TMP)
     │   │   │               ├── MessageText         (TMP)
@@ -116,20 +106,20 @@
     │   │   │               └── NoButton            (Button)
     │   │   │                   └── Text            (TMP — "No")
     │   │   │
+    │   │   ├── QuitConfirmationPanel           ← new GameObject — ACTIVE
+    │   │   │   └── QuitDialog                  ← INACTIVE
+    │   │   │       └── ContentPanel
+    │   │   │           ├── TitleText           (TMP)
+    │   │   │           ├── YesButton           (Button)
+    │   │   │           │   └── Text            (TMP — "Yes")
+    │   │   │           └── NoButton            (Button)
+    │   │   │               └── Text            (TMP — "No")
+    │   │   │
     │   │   ├── NotificationPopup (FUTURE IMPLEMENTATION)
     │   │   └── Tooltip (FUTURE IMPLEMENTATION)
     │   │
-    │   ├── Transitions (FUTURE IMPLEMENTATION)
-    │   │   ├── FadeOverlay
-    │   │   └── ScreenBlocker
-    │   │
-    │   └── QuitConfirmationPanel ← CREATE THIS
-    │       ├── Overlay (Image - Black with 50% alpha)
-    │       └── ConfirmPanel (Image - White background)
-    │           ├── TitleText ("Quit Game?")
-    │           ├── YesButton
-    │           │   └── ButtonText ("Yes")
-    │           └── NoButton
-    │               └── ButtonText ("No")
+    │   └── Transitions (FUTURE IMPLEMENTATION)
+    │       ├── FadeOverlay
+    │       └── ScreenBlocker
     │
     └── EventSystem

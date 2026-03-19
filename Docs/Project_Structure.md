@@ -64,8 +64,14 @@ Assets/Scripts/
         │   │   ├── GalleryController.cs           # Populates gallery grid from save data CG unlocks
         │   │   ├── GalleryFullscreenViewer.cs     # Fullscreen CG viewer for the gallery panel
         │   │   └── GalleryThumbnailItems.cs       # Individual CG thumbnail — locked/unlocked state
+        │   ├── Setting/
+        │   │   └── SettingPanel.cs
         │   ├── HomeScreenController.cs            # Home screen app launcher — opens scenes or panels
         │   └── HomeScreenNavButtons.cs            # Navigation bar buttons for the phone home screen
+        │
+        ├── Overlay/
+        │   ├── Dialog/
+        │       └── ResetConfirmationDialog.cs
         │
         └── Screens/
             ├── DisclaimerScreen.cs                # First-launch TOS screen — skipped after acceptance
