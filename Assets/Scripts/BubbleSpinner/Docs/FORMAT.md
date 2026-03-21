@@ -1,7 +1,3 @@
-Here's the full `.bub` format reference:
-
----
-
 # BubbleSpinner — .bub Format Reference
 
 ## File Structure
