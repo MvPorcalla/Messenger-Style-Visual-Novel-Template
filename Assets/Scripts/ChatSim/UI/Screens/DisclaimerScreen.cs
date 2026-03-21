@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Assets/Scripts/UI/Controllers/DisclaimerScreen.cs
+// Assets/Scripts/UI/Screens/DisclaimerScreen.cs
 // ════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;
@@ -14,34 +14,47 @@ using UnityEditor;
 namespace ChatSim.UI.Screens
 {
     /// <summary>
-    /// CRITICAL: This scene loads FIRST (before Bootstrap)
+    /// This scene is OPTIONAL — loads before Bootstrap.
     /// - No game systems are active yet
     /// - No managers initialized
     /// - Completely isolated
-    /// 
-    /// Attach to: 00_Disclaimer → Canvas
+    ///
     /// Flow: 00_Disclaimer → 01_Bootstrap
+    ///
+    /// To not include this scene, simply set Bootstrap as the first scene in Build Settings.
     /// </summary>
     public class DisclaimerScreen : MonoBehaviour
     {
         #region Serialized Fields
 
-        [Header("Panels")]
-        [SerializeField] private GameObject disclaimerPanel;
-        [SerializeField] private GameObject tosPanel;
-
         [Header("UI References")]
-        [SerializeField] private Toggle checkBoxToggle;
-        [SerializeField] private Button agreeButton;
+        [SerializeField] private Button confirmButton;
         [SerializeField] private Button exitButton;
-        [SerializeField] private Button tosButton;
-        [SerializeField] private Button tosBackButton;
 
         [Header("Debug Settings")]
         [SerializeField] private bool skipForTesting = false;
         [SerializeField] private bool enableDebugLogs = true;
 
         #endregion
+
+        // TODO: Multi-panel support (Disclaimer ↔ TOS switching)
+        // [Header("Panels")]
+        // [SerializeField] private GameObject disclaimerPanel;
+        // [SerializeField] private GameObject tosPanel;
+        // [SerializeField] private Button tosButton;
+        // [SerializeField] private Button tosBackButton;
+        //
+        // private void OpenTOS()
+        // {
+        //     tosPanel.SetActive(true);
+        //     disclaimerPanel.SetActive(false);
+        // }
+        //
+        // private void BackToDisclaimer()
+        // {
+        //     tosPanel.SetActive(false);
+        //     disclaimerPanel.SetActive(true);
+        // }
 
         #region Unity Lifecycle
 
@@ -60,8 +73,6 @@ namespace ChatSim.UI.Screens
                 LoadBootstrap();
                 return;
             }
-
-            InitializeUI();
         }
 
         private void Start()
@@ -83,7 +94,7 @@ namespace ChatSim.UI.Screens
                 LoadBootstrap();
             }
 
-            // F9: Reset disclaimer
+            // F9: Reset disclaimer acceptance
             if (Input.GetKeyDown(KeyCode.F9))
             {
                 ResetDisclaimer();
@@ -97,51 +108,22 @@ namespace ChatSim.UI.Screens
 
         private bool ValidateReferences()
         {
-            return disclaimerPanel != null
-                && tosPanel != null
-                && checkBoxToggle != null
-                && agreeButton != null
-                && exitButton != null
-                && tosButton != null
-                && tosBackButton != null;
-        }
-
-        private void InitializeUI()
-        {
-            checkBoxToggle.isOn = false;
-            agreeButton.interactable = false;
-
-            tosPanel.SetActive(false);
-            disclaimerPanel.SetActive(true);
+            return confirmButton != null
+                && exitButton != null;
         }
 
         private void RegisterListeners()
         {
-            checkBoxToggle.onValueChanged.AddListener(OnToggleChanged);
-            agreeButton.onClick.AddListener(OnContinue);
+            confirmButton.onClick.AddListener(OnConfirm);
             exitButton.onClick.AddListener(OnExit);
-            tosButton.onClick.AddListener(OpenTOS);
-            tosBackButton.onClick.AddListener(BackToDisclaimer);
         }
 
         #endregion
 
         #region UI Callbacks
 
-        private void OnToggleChanged(bool isOn)
+        private void OnConfirm()
         {
-            agreeButton.interactable = isOn;
-            Log($"Agreement toggle: {(isOn ? "accepted" : "declined")}");
-        }
-
-        private void OnContinue()
-        {
-            if (!checkBoxToggle.isOn)
-            {
-                Log("Cannot continue without accepting disclaimer");
-                return;
-            }
-
             MarkAccepted();
             Log("Disclaimer accepted - loading Bootstrap");
             LoadBootstrap();
@@ -156,20 +138,6 @@ namespace ChatSim.UI.Screens
 #else
             Application.Quit();
 #endif
-        }
-
-        private void OpenTOS()
-        {
-            tosPanel.SetActive(true);
-            disclaimerPanel.SetActive(false);
-            Log("Opened Terms of Service panel");
-        }
-
-        private void BackToDisclaimer()
-        {
-            tosPanel.SetActive(false);
-            disclaimerPanel.SetActive(true);
-            Log("Returned to Disclaimer panel");
         }
 
         #endregion
