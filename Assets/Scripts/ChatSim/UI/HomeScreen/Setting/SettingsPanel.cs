@@ -13,30 +13,6 @@ namespace ChatSim.UI.HomeScreen.Settings
     /// <summary>
     /// Settings panel — Gameplay, Data, and About sections.
     /// Attach to: SettingsPanel GameObject (child of Screens in 03_PhoneScreen)
-    ///
-    /// Hierarchy:
-    ///   SettingsPanel                       ← ATTACH THIS SCRIPT — INACTIVE by default
-    ///   └── ScrollView
-    ///       └── Viewport
-    ///           └── Content
-    ///               ├── Section_Gameplay
-    ///               │   ├── SectionHeader   (TMP — "Gameplay")
-    ///               │   ├── MessageSpeed
-    ///               │   │   ├── Label       (TMP — "Message Speed")
-    ///               │   │   └── SpeedButton (Button)
-    ///               │   │       ├── Icon    (Image)
-    ///               │   │       └── StateText (TMP — "Normal" / "Fast")
-    ///               │   └── TextSize
-    ///               │       ├── Label       (TMP — "Text Size")
-    ///               │       ├── SmallButton (Button)
-    ///               │       ├── MediumButton(Button)
-    ///               │       └── LargeButton (Button)
-    ///               ├── Section_Data
-    ///               │   ├── SectionHeader   (TMP — "Data")
-    ///               │   └── ResetAllButton  (Button)
-    ///               └── Section_About
-    ///                   ├── SectionHeader   (TMP — "About")
-    ///                   └── VersionText     (TMP)
     /// </summary>
     public class SettingsPanel : MonoBehaviour
     {
@@ -74,9 +50,6 @@ namespace ChatSim.UI.HomeScreen.Settings
         // ═══════════════════════════════════════════════════════════
         // ░ CONSTANTS
         // ═══════════════════════════════════════════════════════════
-
-        private const string FAST_MODE_PREF_KEY = "ChatFastMode";
-        private const string TEXT_SIZE_PREF_KEY = "ChatTextSize";
 
         private const float TEXT_SIZE_SMALL  = 36f;
         private const float TEXT_SIZE_MEDIUM = 42f;
@@ -134,11 +107,11 @@ namespace ChatSim.UI.HomeScreen.Settings
         private void LoadAndApplySettings()
         {
             // Load and apply message speed
-            isFastMode = PlayerPrefs.GetInt(FAST_MODE_PREF_KEY, 0) == 1;
+            isFastMode = PlayerPrefs.GetInt(PlayerPrefKeys.FastMode, PlayerPrefKeys.DefaultFastMode) == 1;
             UpdateMessageSpeedVisuals();
 
             // Load and apply text size — default to Large
-            currentTextSize = PlayerPrefs.GetFloat(TEXT_SIZE_PREF_KEY, TEXT_SIZE_LARGE);
+            currentTextSize = PlayerPrefs.GetFloat(PlayerPrefKeys.TextSize, TEXT_SIZE_LARGE);
             UpdateTextSizeButtonStates(currentTextSize);
         }
 
@@ -153,7 +126,7 @@ namespace ChatSim.UI.HomeScreen.Settings
             Debug.Log($"[SettingsPanel] Message speed: {(isFastMode ? "Fast" : "Normal")}");
 
             // Save preference
-            PlayerPrefs.SetInt(FAST_MODE_PREF_KEY, isFastMode ? 1 : 0);
+            PlayerPrefs.SetInt(PlayerPrefKeys.FastMode, isFastMode ? 1 : 0);
             PlayerPrefs.Save();
 
             // Update visuals
@@ -185,7 +158,7 @@ namespace ChatSim.UI.HomeScreen.Settings
             Debug.Log($"[SettingsPanel] Text size: {fontSize}");
 
             // Save preference
-            PlayerPrefs.SetFloat(TEXT_SIZE_PREF_KEY, fontSize);
+            PlayerPrefs.SetFloat(PlayerPrefKeys.TextSize, fontSize);
             PlayerPrefs.Save();
 
             // Update button visual states

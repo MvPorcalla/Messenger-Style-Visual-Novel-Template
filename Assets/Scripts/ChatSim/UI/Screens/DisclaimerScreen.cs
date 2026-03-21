@@ -43,12 +43,6 @@ namespace ChatSim.UI.Screens
 
         #endregion
 
-        #region Constants
-
-        private const string DISCLAIMER_KEY = "HasSeenDisclaimer";
-
-        #endregion
-
         #region Unity Lifecycle
 
         private void Awake()
@@ -194,12 +188,12 @@ namespace ChatSim.UI.Screens
 
         private static bool HasAcceptedDisclaimer()
         {
-            return PlayerPrefs.GetInt(DISCLAIMER_KEY, 0) == 1;
+            return PlayerPrefs.GetInt(PlayerPrefKeys.DisclaimerAccepted, PlayerPrefKeys.DefaultDisclaimerAccepted) == 1;
         }
 
         private static void MarkAccepted()
         {
-            PlayerPrefs.SetInt(DISCLAIMER_KEY, 1);
+            PlayerPrefs.SetInt(PlayerPrefKeys.DisclaimerAccepted, 1);
             PlayerPrefs.Save();
             Debug.Log("[Disclaimer] Acceptance saved");
         }
@@ -212,7 +206,7 @@ namespace ChatSim.UI.Screens
         [ContextMenu("Reset Disclaimer")]
         private void ResetDisclaimer()
         {
-            PlayerPrefs.DeleteKey(DISCLAIMER_KEY);
+            PlayerPrefs.DeleteKey(PlayerPrefKeys.DisclaimerAccepted);
             PlayerPrefs.Save();
             Debug.Log("[Disclaimer] Reset - will show on next launch");
         }
