@@ -45,7 +45,8 @@ namespace ChatSim.UI.Screens
         [Header("Notifications")]
         [SerializeField] private GameObject notificationContainer;
         [SerializeField] private GameObject notificationItemPrefab;  // needs: senderText (TMP) + previewText (TMP)
-        [SerializeField] private GameObject notificationSummaryPrefab;  // shown when unread exceeds limit
+        [SerializeField] private GameObject moreIndicator;  // simple TMP text — "more..."
+
 
         [Header("Swipe Settings")]
         [Tooltip("Minimum swipe distance in pixels to trigger unlock")]
@@ -120,6 +121,11 @@ namespace ChatSim.UI.Screens
             foreach (Transform child in notificationContainer.transform)
                 Destroy(child.gameObject);
 
+            if (moreIndicator != null)
+                moreIndicator.SetActive(false);
+
+            if (maxIndividualNotifications == 0) return;
+
             if (GameBootstrap.Save == null)
             {
                 LogWarning("SaveManager not ready — skipping notifications");
@@ -139,23 +145,14 @@ namespace ChatSim.UI.Screens
 
             Log($"Unread conversations: {unread.Count}");
 
-            if (maxIndividualNotifications == 0)
-            {
-                // Summary only
-                ShowSummaryOnly(unread.Count);
-                return;
-            }
-
             int individualCount = Mathf.Min(unread.Count, maxIndividualNotifications);
-            int remainingCount = unread.Count - individualCount;
+            int remainingCount  = unread.Count - individualCount;
 
-            // Spawn individual notifications
             for (int i = 0; i < individualCount; i++)
                 SpawnNotificationItem(unread[i]);
 
-            // Show summary badge if there are more
             if (remainingCount > 0)
-                ShowSummaryBadge(remainingCount);
+                ShowMoreIndicator();
         }
 
         /// <summary>
@@ -198,24 +195,10 @@ namespace ChatSim.UI.Screens
                 previewText.text = GetLastNpcMessage(state);
         }
 
-        private void ShowSummaryOnly(int totalCount)
+        private void ShowMoreIndicator()
         {
-            GameObject item = Instantiate(notificationSummaryPrefab, notificationContainer.transform);
-            TextMeshProUGUI text  = FindTMP(item, "SummaryText");
-            TextMeshProUGUI badge = FindTMP(item, "SummaryBadge");
-
-            if (text != null)  text.text  = "You have new messages";
-            if (badge != null) badge.text = totalCount.ToString();
-        }
-
-        private void ShowSummaryBadge(int remainingCount)
-        {
-            GameObject item = Instantiate(notificationSummaryPrefab, notificationContainer.transform);
-            TextMeshProUGUI text  = FindTMP(item, "SummaryText");
-            TextMeshProUGUI badge = FindTMP(item, "SummaryBadge");
-
-            if (text != null)  text.text  = "You have new messages";
-            if (badge != null) badge.text = $"+{remainingCount}";
+            if (moreIndicator != null)
+                moreIndicator.SetActive(true);
         }
 
         /// <summary>
