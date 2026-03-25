@@ -333,6 +333,9 @@ choiceContainer       → ChatChoices (this same GameObject)
 [Pooling]
 poolingManager        → ChatAppController (drag ChatAppController)
 prewarmCount          → 4
+
+[Auto Scroll]
+autoScroller          → ChatAppController (drag — Unity finds ChatAutoScroller on it)
 ```
 
 ---
@@ -424,6 +427,7 @@ ChatMessageSpawner
 ChatChoiceSpawner
 ☐ choiceButtonPrefab
 ☐ choiceContainer
+☐ autoScroller
 
 ContactListPanel
 ☐ characterDatabase
@@ -488,3 +492,9 @@ Any bubble instances left in `Content` from prefab testing will persist at runti
 
 **Message bubbles show wrong width on pool reuse**
 `AutoResizeText` is required on the TMP child of each text bubble prefab (`NpcMessage`, `PlayerMessage`, `SystemMessage`). It needs both a `TextMeshProUGUI` and a `LayoutElement` on the same GameObject. If either is missing, `[AutoResize]` errors will appear in the Console and bubbles will render at incorrect widths.
+
+**Choices overlap last message bubble in normal mode**
+`autoScroller` must be assigned on `ChatChoiceSpawner`. Without it, the spawner 
+cannot force scroll to bottom after choices appear, causing overlap. 
+Drag the `ChatAppController` GameObject into the `autoScroller` field — 
+Unity resolves the `ChatAutoScroller` component from it.
