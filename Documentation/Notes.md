@@ -1,23 +1,3 @@
-// TODO: CharacterDatabase is serialized in multiple classes (GalleryController, ContactListPanel, ContactsAppPanel).
-// Move it to GameBootstrap and use a shared reference to ensure a single source of truth.
-
----
-
-// TODO: Investigate why cgImage is not respecting inspector offsets
-// Question: I set cgImage to stretch with Top = 120, Bottom = 0, 
-// but in Playmode it shows Top = 80, Bottom = 80. Why is this happening?
-
----
-
-// TODO: Logging Helper
-// - Goal: Refactor repetitive logging code into a reusable helper function.
-// - Benefits: 
-//     • Avoid repeating GameBootstrap.Config checks in every class
-//     • Centralize log formatting and conditional toggles
-//     • Make it easy to update log behavior globally
-
----
-
 // TODO: Review Chat App autoscroll behavior.
 // Issue: At the start, the autoscroller doesn’t work correctly — you need to swipe up manually to activate it.
 //        The new message indicator keeps showing initially.
@@ -63,5 +43,3 @@ GameObject item = Instantiate(notificationItemPrefab, notificationContainer.tran
 * It’s **not a crash**, but it’s Unity telling you: “You’re hitting the internal memory safety limits for object lifetimes.”
 
 **Fix:** Use **object pooling** — keep a pool of notification items and **re-use them instead of destroying/instantiating every time**. This eliminates the warning and improves performance.
-
-I can draft a **LockScreen notification pooling system** for you that fits your current setup. Do you want me to do that?

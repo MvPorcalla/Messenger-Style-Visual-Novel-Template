@@ -51,6 +51,9 @@ namespace ChatSim.UI.Screens
 
         private Vector2 arrowStartPos;
 
+        private string _lastTimeText;
+        private string _lastDateText;
+
         // ═════════════════════════════════════════════
         // Logging
         // ═════════════════════════════════════════════
@@ -72,6 +75,12 @@ namespace ChatSim.UI.Screens
         // ═════════════════════════════════════════════
         // Unity Lifecycle
         // ═════════════════════════════════════════════
+
+        private void Awake()
+        {
+            if (swipeArrow != null)
+                arrowStartPos = swipeArrow.anchoredPosition;
+        }
 
         private void Start()
         {
@@ -103,11 +112,20 @@ namespace ChatSim.UI.Screens
 
         private void UpdateTimeDate()
         {
-            if (timeText != null)
-                timeText.text = System.DateTime.Now.ToString(TimeFormat);
+            string newTime = System.DateTime.Now.ToString(TimeFormat);
+            string newDate = System.DateTime.Now.ToString(DateFormat);
 
-            if (dateText != null)
-                dateText.text = System.DateTime.Now.ToString(DateFormat);
+            if (newTime != _lastTimeText)
+            {
+                _lastTimeText = newTime;
+                if (timeText != null) timeText.text = newTime;
+            }
+
+            if (newDate != _lastDateText)
+            {
+                _lastDateText = newDate;
+                if (dateText != null) dateText.text = newDate;
+            }
         }
 
         // ═════════════════════════════════════════════

@@ -51,9 +51,7 @@ This guide covers the complete setup for the `03_PhoneScreen` scene: hierarchy, 
     │   │   │   │   └── Viewport
     │   │   │   │       └── Content                     ← populated at runtime
     │   │   │   └── GalleryFullscreenViewer             ← GalleryFullscreenViewer + CanvasGroup — ACTIVE
-    │   │   │       ├── BackgroundOverlay
-    │   │   │       ├── ImageContainer
-    │   │   │       │   └── CGImage
+    │   │   │       ├── CGImage
     │   │   │       └── TopBar
     │   │   │           ├── CloseButton
     │   │   │           └── CGNameText
