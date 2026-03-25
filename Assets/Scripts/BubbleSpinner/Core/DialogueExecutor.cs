@@ -27,7 +27,6 @@ namespace BubbleSpinner.Core
         private DialogueNode currentNode;
 
         private IBubbleSpinnerCallbacks callbacks;
-        private string pendingJumpNode = null;
 
         private bool pendingProcessAfterPlayerMessage = false;
 
@@ -124,7 +123,8 @@ namespace BubbleSpinner.Core
                     break;
 
                 case ResumeTarget.Interrupted:
-                    // Player exited mid-message sequence — show continue button if there are unread messages, otherwise determine next action directly.
+                    // Player exited mid-message sequence — show continue button if there are unread messages,
+                    // otherwise determine next action directly.
                     var unreadOnResume = GetUnreadMessagesToNextPause();
                     if (unreadOnResume.Count > 0)
                     {
@@ -135,7 +135,6 @@ namespace BubbleSpinner.Core
                     {
                         state.isInPauseState = false;
                         state.resumeTarget = ResumeTarget.None;
-
                         DetermineNextActionSkipPause();
                     }
                     break;
@@ -154,14 +153,16 @@ namespace BubbleSpinner.Core
 
                 case ResumeTarget.None:
                 default:
-                    // Fresh start or legacy save (version 1) with no resumeTarget recorded.
+                    // Fresh start or legacy save with no resumeTarget recorded.
                     ProcessCurrentNode();
                     break;
             }
         }
 
         /// <summary>
-        /// Called by UI when player clicks the pause/continue button at a pause point.
+        /// Called by UI when player taps the pause/continue button.
+        /// If the pause point has a paired player message, emits it first then resumes NPC flow.
+        /// Otherwise continues directly.
         /// </summary>
         public void OnPauseButtonClicked()
         {
@@ -176,8 +177,7 @@ namespace BubbleSpinner.Core
 
                 BSDebug.Log($"[DialogueExecutor] Player-turn pause — emitting player message: '{playerMessage.content}'");
 
-                // Emit the paired player message for this pause point, 
-                // then continue processing the node to show the next NPC batch.
+                // Emit the paired player message, then resume NPC processing.
                 state.messageHistory.Add(playerMessage);
                 state.readMessageIds.Add(playerMessage.messageId);
                 state.currentMessageIndex = pausePoint.playerMessageIndex + 1;
@@ -187,7 +187,7 @@ namespace BubbleSpinner.Core
                 return;
             }
 
-            // No paired player message — pure pacing pause, continue directly
+            // Pure pacing pause — no player message, continue directly.
             var remainingMessages = GetUnreadMessagesToNextPause();
 
             if (remainingMessages.Count > 0)
@@ -215,6 +215,7 @@ namespace BubbleSpinner.Core
 
         /// <summary>
         /// Called by UI when a choice is selected.
+        /// Jumps directly to the target node — player message is the first line of that node.
         /// </summary>
         public void OnChoiceSelected(ChoiceData choice)
         {
@@ -223,41 +224,16 @@ namespace BubbleSpinner.Core
             state.isInPauseState = false;
             state.resumeTarget = ResumeTarget.None;
 
-            if (choice.playerMessages != null && choice.playerMessages.Count > 0)
-            {
-                foreach (var msg in choice.playerMessages)
-                {
-                    state.messageHistory.Add(msg);
-                    state.readMessageIds.Add(msg.messageId);
-                }
-
-                pendingJumpNode = choice.targetNode;
-                OnMessagesReady?.Invoke(choice.playerMessages);
-            }
-            else
-            {
-                JumpToNode(choice.targetNode);
-            }
+            JumpToNode(choice.targetNode);
         }
 
         /// <summary>
-        /// Called by UI when messages have finished displaying (including after a choice's player messages).
-        /// Checks in priority order:
-        /// 1) If a pending jump exists from a choice selection, executes it
-        /// 2) If a player message was just displayed, resumes NPC processing
-        /// 3) Otherwise determines the next dialogue action normally
+        /// Called by UI when messages have finished displaying.
+        /// If a player message was just displayed from a pause point, resumes NPC processing.
+        /// Otherwise determines the next dialogue action normally.
         /// </summary>
         public void OnMessagesDisplayComplete()
         {
-            if (!string.IsNullOrEmpty(pendingJumpNode))
-            {
-                string jumpTarget = pendingJumpNode;
-                pendingJumpNode = null;
-                JumpToNode(jumpTarget);
-                return;
-            }
-
-            // If we just finished displaying a player message from a choice, we may need to resume the NPC batch that follows it.
             if (pendingProcessAfterPlayerMessage)
             {
                 pendingProcessAfterPlayerMessage = false;
@@ -371,14 +347,10 @@ namespace BubbleSpinner.Core
         }
 
         /// <summary>
-        /// Determines next action while skipping pause points. 
-        /// Used when resuming from Interrupted state or when player clicks continue without a paired player message.
-        /// Priority order is the same as DetermineNextAction but without the pause check:
-        /// 1) If there are choices, show them
-        /// 2) Else if there's an auto-jump, jump to the target node
-        /// 3) Else end the conversation (or next chapter)
-        /// Note: This method does not modify the state.resumeTarget 
-        /// since it's only used when resuming from a known state where we want to skip directly to the next actionable step.
+        /// Determines next action while skipping pause points.
+        /// Used when resuming from Interrupted state or continuing after a pure pacing pause
+        /// with no remaining messages in the current batch.
+        /// Priority: choices → auto-jump → end.
         /// </summary>
         private void DetermineNextActionSkipPause()
         {

@@ -44,23 +44,21 @@ namespace BubbleSpinner.Data
         /// <param name="imgPath">The image path for Image type messages (optional).</param>
         public MessageData(MessageType msgType, string msgSpeaker, string msgContent, string imgPath = "")
         {
-            type          = msgType;
-            speaker       = msgSpeaker;
-            content       = msgContent;
-            imagePath     = imgPath;
-            timestamp     = DateTime.Now.ToString("HH:mm");
-            messageId     = "";
+            type           = msgType;
+            speaker        = msgSpeaker;
+            content        = msgContent;
+            imagePath      = imgPath;
+            timestamp      = DateTime.Now.ToString("HH:mm");
+            messageId      = "";
             shouldUnlockCG = false;
         }
 
         /// <summary>
         /// Returns true if this message was sent by the player.
         /// Canonical speaker check — used by timing, spawning, and any future consumers.
-        /// Covers both explicit "Player" speaker and "#"-prefixed inline player messages.
         /// </summary>
         public bool IsPlayerMessage =>
-            string.Equals(speaker, "player", StringComparison.OrdinalIgnoreCase) ||
-            (speaker != null && speaker.StartsWith("#"));
+            string.Equals(speaker, "player", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Returns true if this message is a system message (timestamps, scene labels, etc).
@@ -84,14 +82,12 @@ namespace BubbleSpinner.Data
     {
         public string choiceText;
         public string targetNode;
-        public List<MessageData> playerMessages;
 
         /// <summary>
-        /// Initializes an empty choice with a blank player message list.
+        /// Initializes a choice with empty text and no target node.
         /// </summary>
         public ChoiceData()
         {
-            playerMessages = new List<MessageData>();
         }
 
         /// <summary>
@@ -99,9 +95,8 @@ namespace BubbleSpinner.Data
         /// </summary>
         public ChoiceData(string text, string target)
         {
-            choiceText     = text;
-            targetNode     = target;
-            playerMessages = new List<MessageData>();
+            choiceText = text;
+            targetNode = target;
         }
     }
 
@@ -158,7 +153,11 @@ namespace BubbleSpinner.Data
 
     /// <summary>
     /// Represents a pause point in a dialogue node.
-    /// Stops message flow after <c>stopIndex</c> and optionally pairs with a player message.
+    /// Stops message flow at <c>stopIndex</c> and optionally pairs with a player message.
+    ///
+    /// Two cases:
+    ///   playerMessageIndex = -1  — pure pacing pause (... in .bub), nothing sent on tap
+    ///   playerMessageIndex >= 0  — player-turn pause (Player: "text" in .bub), message sent on tap
     /// </summary>
     [Serializable]
     public class PausePoint
