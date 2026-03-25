@@ -2477,6 +2477,7 @@ MonoBehaviour:
   choiceContainer: {fileID: 1186336513}
   poolingManager: {fileID: 1578891959}
   prewarmCount: 4
+  autoScroller: {fileID: 1578891958}
 --- !u!1 &1270690957
 GameObject:
   m_ObjectHideFlags: 0

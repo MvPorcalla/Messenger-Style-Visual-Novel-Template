@@ -754,15 +754,12 @@ namespace ChatSim.UI.ChatApp.Controllers
             }
         }
         
-        /// <summary>
-        /// Waits two frames before scrolling to bottom.
-        /// Two frames are required: the first allows Unity to activate and layout
-        /// the newly spawned message bubbles, the second ensures ContentSizeFitter
-        /// has recalculated the scroll rect's content height before we scroll.
-        /// One frame is not sufficient — scroll position calculation uses stale height.
+        /// <summary
+        /// Delays scroll to bottom by 2 frames to ensure all UI updates are processed.
         /// </summary>
         private IEnumerator ScrollToBottomDelayed()
         {
+            yield return new WaitUntil(() => autoScroll != null && autoScroll.IsInitialized);
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
             ForceScrollToBottom();

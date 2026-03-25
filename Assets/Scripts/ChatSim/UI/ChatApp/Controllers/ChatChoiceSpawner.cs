@@ -39,6 +39,9 @@ namespace ChatSim.UI.ChatApp.Controllers
         [SerializeField] private PoolingManager poolingManager;
         [SerializeField] private int prewarmCount = 4;
 
+        [Header("Auto Scroll")]
+        [SerializeField] private ChatAutoScroller autoScroller;
+
         // ═══════════════════════════════════════════════════════════
         // ░ STATE
         // ═══════════════════════════════════════════════════════════
@@ -217,6 +220,11 @@ namespace ChatSim.UI.ChatApp.Controllers
 
             if (choiceContainer != null)
                 LayoutRebuilder.ForceRebuildLayoutImmediate(choiceContainer);
+
+            yield return new WaitForEndOfFrame();
+
+            if (autoScroller != null)
+                autoScroller.ForceScrollToBottom();
 
             rebuildLayoutCoroutine = null;
         }

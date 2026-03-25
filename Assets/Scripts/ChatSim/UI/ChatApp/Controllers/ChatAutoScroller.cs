@@ -153,7 +153,19 @@ namespace ChatSim.UI.ChatApp.Controllers
         public bool IsAtBottom()
         {
             if (!isInitialized || chatScrollRect == null)
-                return false;
+                return true; // treat uninitialized as at bottom
+
+            // If content is smaller than viewport, always at bottom
+            if (contentTransform != null)
+            {
+                float contentHeight = contentTransform.rect.height;
+                float viewportHeight = chatScrollRect.viewport != null
+                    ? chatScrollRect.viewport.rect.height
+                    : chatScrollRect.GetComponent<RectTransform>().rect.height;
+
+                if (contentHeight <= viewportHeight)
+                    return true;
+            }
 
             return chatScrollRect.verticalNormalizedPosition <= BottomThreshold;
         }
