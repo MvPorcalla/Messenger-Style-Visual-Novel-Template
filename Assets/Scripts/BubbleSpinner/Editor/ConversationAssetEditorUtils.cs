@@ -14,7 +14,7 @@ namespace BubbleSpinner.EditorTools
         // ─────────────────────────────────────────────
         public const string TAB_CHAPTERS = "Chapters";
         public const string TAB_PROFILE  = "Profile";
-        public const string TAB_CG       = "CG";
+        public const string TAB_CG       = "CG Images";
         public const string TAB_TOOLS    = "Tools";
 
         // ─────────────────────────────────────────────
