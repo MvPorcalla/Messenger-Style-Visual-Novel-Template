@@ -212,7 +212,7 @@ namespace BubbleSpinner.EditorTools
                     // Row 1 — Entry Point label
                     EditorGUI.LabelField(
                         new Rect(rect.x, y, rect.width, lineHeight),
-                        "Entry Point",
+                        "Entry Point — Always loads first",
                         EditorStyles.boldLabel
                     );
 
