@@ -23,14 +23,15 @@ Fern: "She just has her own way of showing it."
 Fern: "Still, there are moments when I feel..."
 
 >> choice
-    -> "Lonely?"
-        <<jump Node_Loneliness>>
-
-    -> "Unappreciated?"
-        <<jump Node_Appreciation>>
+	-> "Lonely?"
+		Player: "Test Choice Dialogue"
+		<<jump Node_Loneliness>>
+	-> "Unappreciated?"
+		Player: "Test Choice Dialogue"
+		<<jump Node_Appreciation>>
 >> endchoice
 
-===
+---
 
 //=====================================
 // LONELINESS NODE
@@ -54,20 +55,62 @@ Fern: "Heiter-sama entrusted me to her before he passed."
 Fern: "But sometimes..."
 Fern: "Sometimes I wish she would see me as I am now, not just as the child she once knew."
 
-Player: "You've grown a lot"
+>> choice
+	-> "Tell her how you feel"
+		<<jump Node_Lonely_Advice>>
+	-> "Stay by her side quietly"
+		<<jump Node_Lonely_Silent>>
+>> endchoice
 
-Fern: "Have I?"
-Fern: "Maybe that's why I wanted to talk to someone today."
-Fern: "Someone who exists in the same timeframe as me."
-Fern: "Thank you for listening without judgment."
+---
+
+//=====================================
+// LONELY - ADVICE
+//=====================================
+
+title: Node_Lonely_Advice
+---
+Player: "Maybe you should tell her how you feel."
+
+Fern: "...Directly?"
+Fern: "I'm not sure Frieren-sama would understand right away."
+Fern: "But... maybe that's not a reason to stay silent."
+
+Fern: "She always says humans are difficult to understand."
+Fern: "Perhaps it's time I let her try."
 
 >> media npc type:image unlock:true path:Fern/CG3
 
-Player: "Anytime"
+Fern: "Thank you."
+Fern: "You make it sound... possible."
 
 <<jump EndNode>>
 
-===
+---
+
+//=====================================
+// LONELY - SILENT
+//=====================================
+
+title: Node_Lonely_Silent
+---
+Player: "Maybe just staying with her is enough."
+
+Fern: "...Maybe."
+Fern: "I've done that for so long already."
+Fern: "Quietly supporting her, making sure she doesn't fall apart."
+
+Fern: "But sometimes silence feels heavier than words."
+
+>> media npc type:image unlock:true path:Fern/CG3
+
+Fern: "Still..."
+Fern: "I think I'll stay."
+Fern: "That's the path I chose."
+
+<<jump EndNode>>
+
+---
 
 //=====================================
 // APPRECIATION NODE
@@ -96,19 +139,66 @@ Fern: "Even when Frieren-sama forgets my birthday, or doesn't notice I changed m
 Fern: "I know she needs me."
 Fern: "And maybe I need to be needed."
 
-Player: "That's a beautiful way to see it"
+>> choice
+	-> "You deserve appreciation too"
+		<<jump Node_Appreciation_Validate>>
+	-> "Maybe you rely on her too"
+		<<jump Node_Appreciation_Reflect>>
+>> endchoice
 
-Fern: "You think so?"
-Fern: "Sometimes I worry I'm just making excuses."
-Fern: "But talking to you... it helps clarify things."
+---
+
+//=====================================
+// APPRECIATION - VALIDATE
+//=====================================
+
+title: Node_Appreciation_Validate
+---
+Player: "You deserve appreciation too."
+
+Fern: "...Do I?"
+Fern: "I never really thought about it that way."
+
+Fern: "Heiter-sama always praised me."
+Fern: "But Frieren-sama..."
+
+Fern: "She's different."
 
 >> media npc type:image unlock:true path:Fern/CG3
 
-Player: "I'm glad"
+Fern: "Still..."
+Fern: "Hearing that from you makes me feel... seen."
 
 <<jump EndNode>>
 
-===
+---
+
+//=====================================
+// APPRECIATION - REFLECT
+//=====================================
+
+title: Node_Appreciation_Reflect
+---
+Player: "Maybe you rely on her too."
+
+Fern: "...I do."
+Fern: "More than I'd like to admit."
+
+Fern: "She gave me a place to belong."
+Fern: "Even if she doesn't always show it in obvious ways."
+
+Fern: "Maybe that's why I stay."
+Fern: "Not just because she needs me..."
+
+Fern: "...but because I need her too."
+
+>> media npc type:image unlock:true path:Fern/CG3
+
+Fern: "It's strange when you put it into words."
+
+<<jump EndNode>>
+
+---
 
 //=====================================
 // END NODE
@@ -129,7 +219,6 @@ Fern: "Perhaps we can speak again sometime?"
 
 System: "Later that evening."
 
-// Cross-chapter jump - Chapter 2 will continue the story
 <<jump Start_Ch2>>
 
-===
+---

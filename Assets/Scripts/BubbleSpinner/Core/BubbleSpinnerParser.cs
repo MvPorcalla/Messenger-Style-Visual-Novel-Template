@@ -15,17 +15,20 @@ namespace BubbleSpinner.Core
     /// Supports dialogue lines, media commands, jump commands, pause points, and choice blocks.
     ///
     /// .bub syntax summary:
-    ///   title: NodeName       — declares a node
-    ///   ---                   — opens node content (must follow title:)
-    ///   ===                   — closes node
-    ///   ...                   — pure pacing pause (tap to continue, nothing sent)
-    ///   Player: "text"        — implicit pause point; tap sends the message then NPC continues
-    ///   Speaker: "text"       — NPC or System message
-    ///   >> media npc type:image [unlock:true] path:Key  — image bubble
-    ///   >> choice / >> endchoice                        — choice block (endchoice required)
-    ///   -> "Option text"      — choice button (inside >> choice block only)
-    ///   <<jump NodeName>>     — jump to node (cross-chapter if not found in current file)
-    ///   //                    — comment (inline or full line)
+    ///   title: NodeName                                   — declares a node
+    ///   ---                                               — opens node content (must follow title:)
+    ///   ...                                               — pure pacing pause (tap to continue, nothing sent)
+    ///                                                     — no pause points inside choice (... is ignored in choice blocks)
+    ///   Player: "text"                                    — implicit pause point; tap sends the message then NPC continues
+    ///   Speaker: "text"                                   — NPC or System message
+    ///   >> media npc type:image [unlock:true] path:Key    — image bubble
+    ///   >> choice / >> endchoice                          — choice block (endchoice required, must be at indent 0)
+    ///     -> "Option text" <<jump Node>>                  — inline jump choice (indent 1, no pre-jump dialogue)
+    ///     -> "Option text"                                — fall-through choice (indent 1)
+    ///         Speaker: "text"                             — pre-jump dialogue (indent 2, before <<jump>>)
+    ///         >> media npc type:image path:Key            — pre-jump media (indent 2, before <<jump>>)
+    ///         <<jump Node>>                               — block jump (indent 2, must come after all dialogue)
+    ///   //                                                — comment (inline or full line)
     /// </summary>
     public static class BubbleSpinnerParser
     {
@@ -34,8 +37,11 @@ namespace BubbleSpinner.Core
             public DialogueNode currentNode;
             public ChoiceData currentChoice;
             public bool inChoiceBlock;
-            public bool processingChoiceContent;
-            public bool lastParsedWasTitle;     // tracks whether --- follows a title: line
+            public bool choiceJumpSeen;
+            public bool lastParsedWasTitle;
+            public bool isNodeOpen;
+            public bool hasWarnedAboutMissingOpen;
+            public int indentLevel;
             public int lineNumber;
             public string fileName;
         }
@@ -65,8 +71,10 @@ namespace BubbleSpinner.Core
 
             for (int i = 0; i < lines.Length; i++)
             {
-                string line = lines[i].Trim();
+                string rawLine = lines[i];
                 context.lineNumber = i + 1;
+                context.indentLevel = MeasureIndent(rawLine, context);
+                string line = rawLine.Trim();
 
                 try
                 {
@@ -92,8 +100,7 @@ namespace BubbleSpinner.Core
                     }
 
                     if (TryParseNodeTitle(line, context, nodes)) continue;
-                    if (TryParseNodeOpen(line, context)) continue;
-                    if (TryParseNodeClose(line, context, nodes)) continue;
+                    if (TryParseNodeOpen(line, context, nodes)) continue;
 
                     if (context.currentNode == null)
                     {
@@ -102,11 +109,23 @@ namespace BubbleSpinner.Core
                         continue;
                     }
 
-                    if (TryParseJumpCommand(line, context)) continue;
+                    if (!context.isNodeOpen)
+                    {
+                        if (!context.hasWarnedAboutMissingOpen)
+                        {
+                            BSDebug.Warn($"[BubbleSpinner] [{context.fileName}:{context.lineNumber}] " +
+                                $"Node '{context.currentNode.nodeName}' is missing its opening '---' — all content will be ignored until '---' is found");
+                            context.hasWarnedAboutMissingOpen = true;
+                        }
+                        context.lastParsedWasTitle = false;
+                        continue;
+                    }
+
                     if (TryParsePausePoint(line, context)) continue;
                     if (TryParseChoiceBlockStart(line, context)) continue;
                     if (TryParseChoiceBlockEnd(line, context)) continue;
-                    if (TryParseChoiceOption(line, context)) continue;
+                    if (TryParseChoiceOption(line, context)) continue;  // handles <<jump>> inside choice block
+                    if (TryParseJumpCommand(line, context)) continue;   // handles <<jump>> outside choice block
                     if (TryParseMediaCommand(line, context)) continue;
                     if (TryParseDialogueLine(line, context)) continue;
 
@@ -147,6 +166,16 @@ namespace BubbleSpinner.Core
                 {
                     node.messages[i].messageId = $"{nodeName}_{i}";
                 }
+
+                // Assign IDs to pre-jump messages inside choices
+                for (int c = 0; c < node.choices.Count; c++)
+                {
+                    var choice = node.choices[c];
+                    for (int m = 0; m < choice.preJumpMessages.Count; m++)
+                    {
+                        choice.preJumpMessages[m].messageId = $"{nodeName}_choice{c}_prejump{m}";
+                    }
+                }
             }
         }
 
@@ -167,6 +196,11 @@ namespace BubbleSpinner.Core
 
             if (ctx.currentNode != null)
             {
+                if (ctx.isNodeOpen)
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"Node '{ctx.currentNode.nodeName}' was never closed with '---' — closing implicitly");
+                }
                 FinalizeCurrentNode(ctx, nodes);
             }
 
@@ -185,8 +219,9 @@ namespace BubbleSpinner.Core
             }
 
             ctx.currentNode = new DialogueNode(nodeName);
+            ctx.isNodeOpen = false;
+            ctx.hasWarnedAboutMissingOpen = false;
             ctx.inChoiceBlock = false;
-            ctx.processingChoiceContent = false;
             ctx.currentChoice = null;
             ctx.lastParsedWasTitle = true;
 
@@ -194,57 +229,44 @@ namespace BubbleSpinner.Core
         }
 
         /// <summary>
-        /// Handles --- which opens node content.
-        /// Valid only directly after a title: line.
+        /// Handles --- which opens or closes a node.
+        /// First --- after title: opens the node content.
+        /// Second --- closes the node.
+        /// Orphan --- with no current node is an error.
         /// </summary>
-        private static bool TryParseNodeOpen(string line, ParserContext ctx)
+        private static bool TryParseNodeOpen(string line, ParserContext ctx, Dictionary<string, DialogueNode> nodes)
         {
             if (line != "---")
                 return false;
 
-            if (!ctx.lastParsedWasTitle)
-            {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '---' found without preceding title: — ignored");
-            }
-
-            ctx.lastParsedWasTitle = false;
-            return true;
-        }
-
-        /// <summary>
-        /// Handles === which closes a node.
-        /// Warns if a choice block is still open when the node closes.
-        /// </summary>
-        private static bool TryParseNodeClose(string line, ParserContext ctx, Dictionary<string, DialogueNode> nodes)
-        {
-            if (line != "===")
-                return false;
-
+            // No node at all — orphan closing ---
             if (ctx.currentNode == null)
             {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '===' found with no open node — ignored");
+                BSDebug.Error($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '---' found with no node — missing title: before this");
                 ctx.lastParsedWasTitle = false;
                 return true;
             }
 
-            if (ctx.inChoiceBlock)
+            if (!ctx.isNodeOpen)
             {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '===' reached with unclosed >> choice block — use >> endchoice before ===");
-
-                // Close the choice block gracefully before finalizing
-                if (ctx.currentChoice != null)
+                // Opening ---
+                if (!ctx.lastParsedWasTitle)
                 {
-                    ValidateAndAddChoice(ctx);
-                    ctx.currentChoice = null;
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '---' found without preceding title: — ignored");
                 }
 
-                ctx.inChoiceBlock = false;
-                ctx.processingChoiceContent = false;
+                ctx.isNodeOpen = true;
+                ctx.lastParsedWasTitle = false;
+                return true;
             }
-
-            FinalizeCurrentNode(ctx, nodes);
-            ctx.lastParsedWasTitle = false;
-            return true;
+            else
+            {
+                // Closing ---
+                FinalizeCurrentNode(ctx, nodes);
+                ctx.isNodeOpen = false;
+                ctx.lastParsedWasTitle = false;
+                return true;
+            }
         }
 
         private static bool TryParseJumpCommand(string line, ParserContext ctx)
@@ -261,12 +283,48 @@ namespace BubbleSpinner.Core
                 return true;
             }
 
-            if (ctx.processingChoiceContent && ctx.currentChoice != null)
+            if (ctx.inChoiceBlock)
             {
+                if (ctx.indentLevel == 0)
+                {
+                    // Strict mode — node-level jump inside choice block is an error
+                    BSDebug.Error($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"Unexpected <<jump>> at indent 0 inside choice block — use '>> endchoice' before a node-level jump");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                if (ctx.indentLevel == 1)
+                {
+                    BSDebug.Error($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"<<jump>> at indent 1 is invalid — must be at indent 2 to belong to a choice, or indent 0 for node level");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                // indent 2 — belongs to current choice
+                if (ctx.currentChoice == null)
+                {
+                    BSDebug.Error($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"<<jump>> at indent 2 but no choice is open");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                if (!string.IsNullOrEmpty(ctx.currentChoice.targetNode))
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"Choice '{ctx.currentChoice.choiceText}' already has a jump target — duplicate ignored");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
                 ctx.currentChoice.targetNode = jumpTarget;
+                ctx.choiceJumpSeen = true;
             }
             else
             {
+                // indent 0 — node level
                 ctx.currentNode.nextNode = jumpTarget;
             }
 
@@ -284,7 +342,7 @@ namespace BubbleSpinner.Core
             if (line != "...")
                 return false;
 
-            if (ctx.processingChoiceContent)
+            if (ctx.inChoiceBlock)
             {
                 BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Pause point inside choice block ignored");
                 ctx.lastParsedWasTitle = false;
@@ -303,15 +361,21 @@ namespace BubbleSpinner.Core
             if (line != ">> choice")
                 return false;
 
+            if (ctx.indentLevel != 0)
+            {
+                BSDebug.Error($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '>> choice' must be at indent 0 — found at indent {ctx.indentLevel}");
+                ctx.lastParsedWasTitle = false;
+                return true;
+            }
+
             if (ctx.inChoiceBlock)
             {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Nested choice blocks not supported");
+                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '>> choice' found inside an open choice block — close with '>> endchoice' first");
                 ctx.lastParsedWasTitle = false;
                 return true;
             }
 
             ctx.inChoiceBlock = true;
-            ctx.processingChoiceContent = false;
             ctx.lastParsedWasTitle = false;
             return true;
         }
@@ -321,9 +385,14 @@ namespace BubbleSpinner.Core
             if (line != ">> endchoice")
                 return false;
 
+            if (ctx.indentLevel != 0)
+            {
+                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '>> endchoice' should be at indent 0 — found at indent {ctx.indentLevel}, recovering");
+            }
+
             if (!ctx.inChoiceBlock)
             {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Unexpected >> endchoice — no open choice block");
+                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] '>> endchoice' found with no open choice block — ignored");
                 ctx.lastParsedWasTitle = false;
                 return true;
             }
@@ -335,22 +404,46 @@ namespace BubbleSpinner.Core
             }
 
             ctx.inChoiceBlock = false;
-            ctx.processingChoiceContent = false;
             ctx.lastParsedWasTitle = false;
             return true;
         }
 
         private static bool TryParseChoiceOption(string line, ParserContext ctx)
         {
-            if (!ctx.inChoiceBlock || !line.StartsWith("-> \"") || !line.EndsWith("\""))
+            if (!ctx.inChoiceBlock || !line.StartsWith("->"))
                 return false;
 
+            if (ctx.indentLevel != 1)
+            {
+                BSDebug.Error($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Choice option '->' must be at indent 1 — found at indent {ctx.indentLevel}");
+                ctx.lastParsedWasTitle = false;
+                return true;
+            }
+
+            // Finalize previous choice if one is pending
             if (ctx.currentChoice != null)
             {
                 ValidateAndAddChoice(ctx);
             }
 
-            string choiceText = line.Substring(4, line.Length - 5);
+            string remainder = line.Substring(2).Trim();
+
+            if (!remainder.StartsWith("\""))
+            {
+                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Choice missing opening quote: {line}");
+                ctx.lastParsedWasTitle = false;
+                return true;
+            }
+
+            int closingQuote = remainder.IndexOf('"', 1);
+            if (closingQuote == -1)
+            {
+                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Choice missing closing quote: {line}");
+                ctx.lastParsedWasTitle = false;
+                return true;
+            }
+
+            string choiceText = remainder.Substring(1, closingQuote - 1);
 
             if (string.IsNullOrEmpty(choiceText))
             {
@@ -360,7 +453,27 @@ namespace BubbleSpinner.Core
             }
 
             ctx.currentChoice = new ChoiceData(choiceText, "");
-            ctx.processingChoiceContent = true;
+            ctx.choiceJumpSeen = false;
+
+            // Check for inline jump: -> "Text" <<jump NodeName>>
+            string afterQuote = remainder.Substring(closingQuote + 1).Trim();
+            if (afterQuote.StartsWith("<<jump") && afterQuote.EndsWith(">>"))
+            {
+                string jumpTarget = afterQuote.Substring(6, afterQuote.Length - 8).Trim();
+
+                if (jumpTarget.Contains("<<jump") || jumpTarget.Contains(">>"))
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Malformed inline jump — possible double jump: {line}");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                ctx.currentChoice.targetNode = jumpTarget;
+                ctx.choiceJumpSeen = true;
+                ValidateAndAddChoice(ctx);
+                ctx.currentChoice = null;
+            }
+
             ctx.lastParsedWasTitle = false;
             return true;
         }
@@ -400,7 +513,38 @@ namespace BubbleSpinner.Core
                 BSDebug.Info($"[BubbleSpinner] [{ctx.lineNumber}] Unlockable CG: {imagePath}");
             }
 
-            ctx.currentNode.messages.Add(imageMessage);
+            if (ctx.inChoiceBlock)
+            {
+                if (ctx.currentChoice == null)
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $">> media inside choice block but no option is open — ignored");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                if (ctx.indentLevel != 2)
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $">> media inside choice option must be at indent 2 — found at indent {ctx.indentLevel}, ignored");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                if (ctx.choiceJumpSeen)
+                {
+                    BSDebug.Error($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $">> media after <<jump>> in choice '{ctx.currentChoice.choiceText}' is unreachable — ignored");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                ctx.currentChoice.preJumpMessages.Add(imageMessage);
+            }
+            else
+            {
+                ctx.currentNode.messages.Add(imageMessage);
+            }
 
             ctx.lastParsedWasTitle = false;
             return true;
@@ -433,27 +577,57 @@ namespace BubbleSpinner.Core
                 content = content.Substring(1, content.Length - 2);
             }
 
-            if (ctx.processingChoiceContent)
+            if (ctx.inChoiceBlock)
             {
-                // Any dialogue line inside a choice block is not supported.
-                // Content belongs in the target node, not the choice itself.
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
-                    $"Dialogue line '{speaker}' inside choice block ignored. " +
-                    $"Place content in the target node instead.");
+                // Must have an open choice option to attach to
+                if (ctx.currentChoice == null)
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"Dialogue inside choice block but no option is open — ignored");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                // Must be at indent 2
+                if (ctx.indentLevel != 2)
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"Dialogue inside choice option must be at indent 2 — found at indent {ctx.indentLevel}, ignored");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                // Dialogue after <<jump>> is unreachable
+                if (ctx.choiceJumpSeen)
+                {
+                    BSDebug.Error($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] " +
+                        $"Dialogue after <<jump>> in choice '{ctx.currentChoice.choiceText}' is unreachable — ignored");
+                    ctx.lastParsedWasTitle = false;
+                    return true;
+                }
+
+                // Valid pre-jump dialogue — add to choice, never generate pause points
+                MessageData.MessageType msgType = speaker.ToLower() == "system"
+                    ? MessageData.MessageType.System
+                    : MessageData.MessageType.Text;
+
+                var message = new MessageData(msgType, speaker, content);
+                ctx.currentChoice.preJumpMessages.Add(message);
+
                 ctx.lastParsedWasTitle = false;
                 return true;
             }
 
-            MessageData.MessageType msgType = speaker.ToLower() == "system"
+            MessageData.MessageType nodeMsgType = speaker.ToLower() == "system"
                 ? MessageData.MessageType.System
                 : MessageData.MessageType.Text;
 
-            var message = new MessageData(msgType, speaker, content);
-            ctx.currentNode.messages.Add(message);
+            var nodeMessage = new MessageData(nodeMsgType, speaker, content);
+            ctx.currentNode.messages.Add(nodeMessage);
 
             // Player: lines are implicit pause points.
             // The pause stops before this message — player taps, message sends, NPC continues.
-            if (message.IsPlayerMessage)
+            if (nodeMessage.IsPlayerMessage)
             {
                 int playerMessageIndex = ctx.currentNode.messages.Count - 1;
                 ctx.currentNode.pausePoints.Add(new PausePoint(playerMessageIndex, playerMessageIndex));
@@ -466,6 +640,89 @@ namespace BubbleSpinner.Core
         // ═══════════════════════════════════════════════════════════
         // HELPER METHODS
         // ═══════════════════════════════════════════════════════════
+
+        // ═══════════════════════════════════════════════════════════
+        // TODO: <<if>> / <<else>> / <<endif>> IMPLEMENTATION NOTES
+        // ═══════════════════════════════════════════════════════════
+        //
+        // CURRENT LIMITATION:
+        // The parser is a flat state machine with indent validation only (levels 0–2).
+        // It does NOT build a parse tree or track nested scopes.
+        //
+        // WHEN IMPLEMENTING <<if>>:
+        // Replace the flat indent checks with a scope stack:
+        //
+        //   private Stack<BlockScope> scopeStack = new Stack<BlockScope>();
+        //
+        //   enum BlockScope { Node, Choice, ChoiceOption, If, Else }
+        //
+        // This allows the parser to know at any point:
+        //   - what block it is currently inside
+        //   - what indent level that block opened at
+        //   - whether an <<else>> is valid here
+        //
+        // PLANNED INDENT STRUCTURE WITH <<if>>:
+        //
+        //   indent 0  — node level (messages, >> choice, <<jump>>)
+        //   indent 1  — choice option (->)
+        //   indent 2  — choice content (<<jump>>, <<if>>)
+        //   indent 3  — body of <<if>> or <<else>>
+        //   indent 4  — nested <<if>> inside <<else>>
+        //
+        // PLANNED SYNTAX:
+        //
+        //   >> choice
+        //       -> "Ask how she's feeling"
+        //           <<if hasMet == true>>
+        //               <<jump Node_Concern_Met>>
+        //           <<else>>
+        //               <<jump Node_Concern_New>>
+        //           <<endif>>
+        //   >> endchoice
+        //
+        // REQUIRED NEW PARSE METHODS:
+        //   TryParseIfBlock()     — opens <<if>> scope, evaluates condition
+        //   TryParseElseBlock()   — switches <<if>> scope to <<else>> branch
+        //   TryParseEndIf()       — closes <<if>> scope
+        //
+        // REQUIRED NEW DATA:
+        //   ConditionData.cs      — stores condition expression and branch targets
+        //   DialogueNode needs a conditions list alongside choices
+        //
+        // EXECUTOR CHANGES:
+        //   DialogueExecutor must evaluate conditions at runtime against game state
+        //   A new IConditionEvaluator interface keeps condition logic decoupled
+        //   from the parser and executor
+        //
+        // ═══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Measures the indent level of a raw line before trimming.
+        /// 1 tab = 1 level. Spaces are rounded to nearest tab equivalent (4 spaces = 1 level).
+        /// Mixed tabs and spaces on the same line produce a warning.
+        /// </summary>
+        private static int MeasureIndent(string rawLine, ParserContext ctx)
+        {
+            int tabs = 0;
+            int spaces = 0;
+            bool hasTabs = false;
+            bool hasSpaces = false;
+
+            foreach (char c in rawLine)
+            {
+                if (c == '\t') { tabs++; hasTabs = true; }
+                else if (c == ' ') { spaces++; hasSpaces = true; }
+                else break;
+            }
+
+            if (hasTabs && hasSpaces)
+            {
+                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}:{ctx.lineNumber}] Mixed tabs and spaces — treating spaces as tabs");
+            }
+
+            int spaceLevel = (int)Math.Round(spaces / 4.0);
+            return tabs + spaceLevel;
+        }
 
         private static string ExtractPathFromMediaCommand(string line)
         {
@@ -480,17 +737,25 @@ namespace BubbleSpinner.Core
         {
             if (ctx.currentChoice == null) return;
 
-            if (string.IsNullOrEmpty(ctx.currentChoice.targetNode))
-            {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}] Choice '{ctx.currentChoice.choiceText}' missing jump target");
-            }
-
             ctx.currentNode.choices.Add(ctx.currentChoice);
         }
 
         private static void FinalizeCurrentNode(ParserContext ctx, Dictionary<string, DialogueNode> nodes)
         {
-            if (ctx.currentChoice != null)
+            if (ctx.inChoiceBlock)
+            {
+                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}] " +
+                    $"Node '{ctx.currentNode.nodeName}' ended with unclosed '>> choice' block — missing '>> endchoice'");
+
+                if (ctx.currentChoice != null)
+                {
+                    ValidateAndAddChoice(ctx);
+                    ctx.currentChoice = null;
+                }
+
+                ctx.inChoiceBlock = false;
+            }
+            else if (ctx.currentChoice != null)
             {
                 ValidateAndAddChoice(ctx);
                 ctx.currentChoice = null;
@@ -505,10 +770,16 @@ namespace BubbleSpinner.Core
 
             if (node.choices.Count > 0 && !string.IsNullOrEmpty(node.nextNode))
             {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}] Node '{node.nodeName}' has both choices and auto-jump");
+                bool allChoicesHaveJumps = node.choices.TrueForAll(c => !string.IsNullOrEmpty(c.targetNode));
+
+                if (allChoicesHaveJumps)
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}] Node '{node.nodeName}' has both choices and auto-jump — auto-jump is unreachable");
+                }
             }
 
             nodes[node.nodeName] = node;
+            ctx.isNodeOpen = false;
             ctx.currentNode = null;
         }
 
@@ -516,13 +787,12 @@ namespace BubbleSpinner.Core
         {
             if (ctx.currentNode != null)
             {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}] File ended without closing '===' on node '{ctx.currentNode.nodeName}'");
+                if (ctx.isNodeOpen)
+                {
+                    BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}] " +
+                        $"File ended with unclosed node '{ctx.currentNode.nodeName}' — missing closing '---'");
+                }
                 FinalizeCurrentNode(ctx, nodes);
-            }
-
-            if (ctx.inChoiceBlock)
-            {
-                BSDebug.Warn($"[BubbleSpinner] [{ctx.fileName}] Choice block never closed with >> endchoice");
             }
         }
 

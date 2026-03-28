@@ -29,6 +29,7 @@ namespace BubbleSpinner.Core
         private IBubbleSpinnerCallbacks callbacks;
 
         private bool pendingProcessAfterPlayerMessage = false;
+        private ChoiceData pendingChoiceJump = null;
 
         // ═══════════════════════════════════════════════════════════
         // EVENTS (UI subscribes to these)
@@ -224,6 +225,24 @@ namespace BubbleSpinner.Core
             state.isInPauseState = false;
             state.resumeTarget = ResumeTarget.None;
 
+            if (choice.HasPreJumpMessages)
+            {
+                // Store the choice to jump after pre-jump messages finish displaying
+                pendingChoiceJump = choice;
+
+                // Add pre-jump messages to history and fire them
+                foreach (var message in choice.preJumpMessages)
+                {
+                    state.messageHistory.Add(message);
+                    state.readMessageIds.Add(message.messageId);
+                    CheckAndUnlockCG(message);
+                }
+
+                OnMessagesReady?.Invoke(choice.preJumpMessages);
+                return;
+            }
+
+            // No pre-jump messages — jump immediately
             JumpToNode(choice.targetNode);
         }
 
@@ -234,6 +253,14 @@ namespace BubbleSpinner.Core
         /// </summary>
         public void OnMessagesDisplayComplete()
         {
+            if (pendingChoiceJump != null)
+            {
+                var choice = pendingChoiceJump;
+                pendingChoiceJump = null;
+                JumpToNode(choice.targetNode);
+                return;
+            }
+
             if (pendingProcessAfterPlayerMessage)
             {
                 pendingProcessAfterPlayerMessage = false;

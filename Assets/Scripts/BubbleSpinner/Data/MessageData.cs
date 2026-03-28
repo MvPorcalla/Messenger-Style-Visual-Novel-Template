@@ -82,12 +82,14 @@ namespace BubbleSpinner.Data
     {
         public string choiceText;
         public string targetNode;
+        public List<MessageData> preJumpMessages;
 
         /// <summary>
-        /// Initializes a choice with empty text and no target node.
+        /// Initializes a choice with empty text, no target node, and an empty pre-jump message list.
         /// </summary>
         public ChoiceData()
         {
+            preJumpMessages = new List<MessageData>();
         }
 
         /// <summary>
@@ -95,9 +97,15 @@ namespace BubbleSpinner.Data
         /// </summary>
         public ChoiceData(string text, string target)
         {
-            choiceText = text;
-            targetNode = target;
+            choiceText      = text;
+            targetNode      = target;
+            preJumpMessages = new List<MessageData>();
         }
+
+        /// <summary>
+        /// Returns true if this choice has dialogue messages to display before jumping.
+        /// </summary>
+        public bool HasPreJumpMessages => preJumpMessages != null && preJumpMessages.Count > 0;
     }
 
     // ═══════════════════════════════════════

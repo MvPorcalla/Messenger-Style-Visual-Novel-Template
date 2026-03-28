@@ -53,6 +53,154 @@ Question:
 
 **Suggestion for `.bub` syntax**
 
-* Convert the first `jump title` into a new syntax for **chapter IDs**.
+* make a new chapter `jump title` syntax for **chapter IDs**.
 * For cross-chapter jumping, introduce a new syntax instead of `<jump Node_name>`.
 * Keep `<jump Node_name>` strictly for **node jumps within the same chapter**.
+
+e.g:
+
+# chapter 1 - file 1 .bub
+
+contact: Sofia
+
+**chapter IDs** <- where chapter jump e.g. (chapter: Ch1)
+
+// after that it reads the chapter downward starting to the first title node
+
+title: Start
+---
+System: "9:42 AM"
+Sofia: "Batch 1 - Message A"
+Sofia: "Batch 1 - Message B"
+
+<<new syntax for corss jumping chapter **chapter IDs**>> e.g. ( <<jump chapter:Ch2>> )
+
+---
+
+# chapter 2 - file 2 .bub
+
+**chapter IDs** <- where chapter jump e.g. (chapter: Ch2)
+
+title: Start
+---
+System: "9:42 AM"
+Sofia: "Batch 2 - Message C"
+Sofia: "Batch 2 - Message D"
+
+
+what do you think of this?
+
+reasoning:
+
+Node jumps are restricted to the current file to keep control flow local and predictable.
+Cross-file jumps are handled separately and are only used to move between chapters/files.
+This separation enforces clear structural boundaries in the story flow.
+
+
+---
+
+
+=-==============================================
+
+---
+
+**Indent Unit**
+- 1 tab = 1 indent level
+- Spaces: count them, round to nearest tab equivalent (4 spaces = 1 level, 2 spaces = round to 1, 6 spaces = round to 1 or 2 — use `Math.Round(spaceCount / 4.0)`)
+- Mixed tabs and spaces on the same line → warn + treat spaces as tabs
+
+---
+
+**Indent Levels and What They Mean**
+
+```
+indent 0    — node level
+                >> choice
+                >> endchoice
+                <<jump Node>>
+                Speaker: "text"
+                ...
+                >> media
+
+indent 1    — choice option
+                -> "Option text"
+                -> "Option text" <<jump Node>>   // inline jump still valid
+
+indent 2    — belongs to the choice directly above
+                <<jump Node>>
+                <<if condition>>                 // future
+
+indent 3    — belongs to the if block above
+                <<jump Node>>                    // future
+                <<else>>                         // future
+
+indent 4+   — deeper conditional nesting         // future
+```
+
+---
+
+**Strict Rules**
+
+| Situation | Behaviour |
+|---|---|
+| `<<jump>>` at indent 0 inside `>> choice` block | Error: unexpected jump at node level inside choice block |
+| `<<jump>>` at indent 1 (same as `->`) | Error: jump must be at indent 2 to belong to a choice |
+| `->` at indent 0 | Error: choice option must be indented inside `>> choice` |
+| `->` at indent 2+ | Error: choice option must be at indent 1 |
+| `<<jump>>` at indent 2 with no open `currentChoice` | Error: jump at choice level but no choice is open |
+| `>> choice` at indent 1+ | Error: choice block must be at indent 0 |
+| `>> endchoice` at indent 1+ | Warn + recover: treat as indent 0 |
+| Wrong indent unit (spaces) | Warn + recover to nearest level |
+
+---
+
+**Inline jump stays valid at indent 1**
+
+```
+>> choice
+    -> "Option" <<jump Node>>    // indent 1, inline — still fine
+>> endchoice
+```
+
+This is equivalent to:
+
+```
+>> choice
+    -> "Option"                  // indent 1
+        <<jump Node>>            // indent 2
+>> endchoice
+```
+
+Both are supported. Inline takes priority — if a `->` line already has a jump, any indent-2 `<<jump>>` below it is a duplicate and errors.
+
+---
+
+**Future conditionals at indent 2-3**
+
+```
+>> choice
+    -> "Option"
+        <<if hasMet == true>>
+            <<jump Node_Met>>
+        <<else>>
+            <<jump Node_New>>
+        <<endif>>
+>> endchoice
+```
+
+The parser doesn't implement this yet — but the indent rules above leave room for it without breaking anything.
+
+---
+
+**What changes in the parser:**
+
+1. Stop calling `Trim()` immediately — measure indent first
+2. Add `MeasureIndent(string rawLine)` helper — returns int level
+3. Add `int indentLevel` to `ParserContext`
+4. Each `TryParse` method gets indent-aware validation at the top
+5. `TryParseJumpCommand` routes based on indent level instead of `processingChoiceContent`
+6. `TryParseChoiceOption` requires indent level 1 strictly
+
+---
+
+Does this spec match what you want before we start coding?
