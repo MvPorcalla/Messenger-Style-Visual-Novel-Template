@@ -32,6 +32,22 @@ namespace BubbleSpinner.Core
     /// </summary>
     public static class BubbleSpinnerParser
     {
+        /// <summary>
+        /// DISPATCH CHAIN — ORDER IS LOAD-BEARING
+        /// ═══════════════════════════════════════════════════════════
+        /// These checks are not independent. Reordering them can cause
+        /// silent misparses with no warnings or errors.
+        ///
+        /// Key ordering constraints:
+        ///   TryParseMediaCommand before TryParseDialogueLine
+        ///     → media commands contain ":" and will match as dialogue lines
+        ///
+        ///   TryParseChoiceOption before TryParseJumpCommand
+        ///     → both match "<<jump"; choice context disambiguates them
+        ///
+        ///   TryParseNodeOpen (above) before all of these
+        ///     → isNodeOpen must be set before any content handlers run
+        /// </summary>
         private class ParserContext
         {
             public DialogueNode currentNode;
