@@ -94,7 +94,18 @@ Sofia: "Casual_20"
 
 ---
 
-on title: Node_Casual when i reach choice block for // CHOICE VARIATION 3 — fall-through and pressing the choice does nothing
+on title: Node_Casual when i reach choice block for // CHOICE VARIATION 3 — fall-through 
+
+new issue for this now it display properly after choosing an option "Casual_17a - That makes sense" it flow downward from Sofia: "Casual_18" to Sofia: "Casual_20"
+but after reaching <<jump EndNode>> instead of jumping it show this again
+
+>> choice
+    -> "Casual_17a - That makes sense"
+    -> "Casual_17b - Tell me more"
+    -> "Casual_17c - I see"
+>> endchoice
+
+and pressing the choice does nothing
 
 ---
 
@@ -142,10 +153,21 @@ Sofia: "Ch2_B_10"
 Player: "Ch2_B_11 - Player message pause"
 Sofia: "Ch2_B_12"
 Sofia: "Ch2_B_13"
+
+then choice option showed up same problem but now pressing the choice does nothing
+
 Sofia: "Ch2_B_15"
 Sofia: "Ch2_B_16"
 Sofia: "Ch2_B_17"
 
-then choice option showed up same problem but now pressing the choice does nothing
+then this choice show up again
+
+>> choice
+    -> "Ch2_B_14a - Hmm"
+    -> "Ch2_B_14b - I see"
+    -> "Ch2_B_14c - Go on"
+>> endchoice
+
+and press does nothing
 
 ---

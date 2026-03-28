@@ -247,8 +247,10 @@ namespace BubbleSpinner.Core
             }
             else
             {
-                // Fall-through choice — no jump, continue processing the current node
+                // Fall-through choice — mark choices resolved so DetermineNextAction
+                // skips the choice block on subsequent passes and continues to the jump
                 BSDebug.Info($"[DialogueExecutor] Fall-through choice — continuing node");
+                currentNode.choicesResolved = true;
                 ProcessCurrentNode();
             }
         }
@@ -347,18 +349,26 @@ namespace BubbleSpinner.Core
         {
             if (currentNode.ShouldPauseAfter(state.currentMessageIndex))
             {
-                var pausePoint = currentNode.GetPauseAt(state.currentMessageIndex);
+                // If this pause point is the implicit choice pause, skip it and
+                // go directly to choices — do not show a continue button here.
+                bool isChoicePause = currentNode.choicePauseIndex >= 0 &&
+                                    state.currentMessageIndex == currentNode.choicePauseIndex;
 
-                if (HasContentAfterPause(pausePoint))
+                if (!isChoicePause)
                 {
-                    state.isInPauseState = true;
-                    state.resumeTarget = ResumeTarget.Pause;
-                    OnPauseReached?.Invoke();
-                    return;
+                    var pausePoint = currentNode.GetPauseAt(state.currentMessageIndex);
+
+                    if (HasContentAfterPause(pausePoint))
+                    {
+                        state.isInPauseState = true;
+                        state.resumeTarget = ResumeTarget.Pause;
+                        OnPauseReached?.Invoke();
+                        return;
+                    }
                 }
             }
 
-            if (currentNode.choices != null && currentNode.choices.Count > 0)
+            if (currentNode.choices != null && currentNode.choices.Count > 0 && !currentNode.choicesResolved)
             {
                 state.isInPauseState = false;
                 state.resumeTarget = ResumeTarget.Choices;
@@ -387,7 +397,7 @@ namespace BubbleSpinner.Core
         /// </summary>
         private void DetermineNextActionSkipPause()
         {
-            if (currentNode.choices != null && currentNode.choices.Count > 0)
+            if (currentNode.choices != null && currentNode.choices.Count > 0 && !currentNode.choicesResolved)
             {
                 state.resumeTarget = ResumeTarget.Choices;
                 OnChoicesReady?.Invoke(currentNode.choices);

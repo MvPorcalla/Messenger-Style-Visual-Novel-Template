@@ -477,10 +477,11 @@ namespace BubbleSpinner.Core
             ctx.inChoiceBlock = true;
 
             // Insert an implicit pause point at the current message count.
-            // This stops message flow before the choice block so DetermineNextAction
-            // can fire choices before any post-choice messages are collected.
+            // Store the index on the node so the executor can distinguish this
+            // pause from a regular pacing pause and fire choices directly.
             int choicePauseIndex = ctx.currentNode.messages.Count;
             ctx.currentNode.pausePoints.Add(new PausePoint(choicePauseIndex));
+            ctx.currentNode.choicePauseIndex = choicePauseIndex;
 
             ctx.lastParsedWasTitle = false;
             return true;
