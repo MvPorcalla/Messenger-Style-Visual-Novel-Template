@@ -32,6 +32,6 @@ MonoBehaviour:
   description: N/A
   personalityTraits: N/A
   cgAddressableKeys:
-  - Assets/Characters/Fern/Fern_CG1.jpg
-  - Assets/Characters/Fern/Fern_CG2.jpg
-  - Assets/Characters/Fern/Fern_CG3.jpg
+  - Fern/CG1
+  - Fern/CG2
+  - Fern/CG3

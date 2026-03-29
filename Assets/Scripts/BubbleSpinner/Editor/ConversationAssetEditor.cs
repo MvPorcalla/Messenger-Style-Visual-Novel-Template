@@ -207,6 +207,18 @@ namespace BubbleSpinner.EditorTools
 
                 float y = rect.y + spacing;
 
+                // Auto-read chapter ID from file whenever file is assigned
+                TextAsset currentFile = fileProp.objectReferenceValue as TextAsset;
+                if (currentFile != null)
+                {
+                    string detectedId = ConversationAssetEditorUtils.ReadChapterIdFromBub(currentFile);
+                    if (idProp.stringValue != detectedId)
+                    {
+                        idProp.stringValue = detectedId;
+                        serializedObject.ApplyModifiedProperties();
+                    }
+                }
+
                 if (index == 0)
                 {
                     // Row 1 — Entry Point label
@@ -218,12 +230,14 @@ namespace BubbleSpinner.EditorTools
 
                     y += lineHeight + spacing;
 
-                    // Row 2 — Chapter ID
+                    // Row 2 — Chapter ID (read-only, auto-detected from file)
+                    EditorGUI.BeginDisabledGroup(true);
                     EditorGUI.PropertyField(
                         new Rect(rect.x, y, rect.width, lineHeight),
                         idProp,
                         new GUIContent("Chapter ID")
                     );
+                    EditorGUI.EndDisabledGroup();
 
                     y += lineHeight + spacing;
 
@@ -236,12 +250,14 @@ namespace BubbleSpinner.EditorTools
                 }
                 else
                 {
-                    // Row 1 — Chapter ID
+                    // Row 1 — Chapter ID (read-only, auto-detected from file)
+                    EditorGUI.BeginDisabledGroup(true);
                     EditorGUI.PropertyField(
                         new Rect(rect.x, y, rect.width, lineHeight),
                         idProp,
                         new GUIContent("Chapter ID")
                     );
+                    EditorGUI.EndDisabledGroup();
 
                     y += lineHeight + spacing;
 

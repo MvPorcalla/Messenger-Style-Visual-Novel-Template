@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEditor.AddressableAssets;
 using BubbleSpinner.Data;
 
 namespace BubbleSpinner.EditorTools
@@ -23,7 +24,7 @@ namespace BubbleSpinner.EditorTools
         public const string SECTION_CHARACTER = "CHARACTER";
         public const string SECTION_CHAPTERS  = "CHAPTERS";
         public const string SECTION_PROFILE   = "PROFILE";
-        public const string SECTION_CG        = "CG";
+        public const string SECTION_CG        = "CG IMAGES";
         public const string SECTION_TOOLS     = "TOOLS";
     }
 
@@ -62,6 +63,8 @@ namespace BubbleSpinner.EditorTools
 
         /// <summary>
         /// Fills cgAddressableKeys from all Texture2D and Sprite assets in the given folder.
+        /// Uses the Addressables address registered for each asset, not the asset path.
+        /// Assets not marked as Addressable are skipped with a warning.
         /// fullPath must be inside the Assets directory.
         /// </summary>
         public static void FillCGFromFolder(ConversationAsset asset, string fullPath)
@@ -77,11 +80,37 @@ namespace BubbleSpinner.EditorTools
 
             asset.cgAddressableKeys.Clear();
 
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+
+            if (settings == null)
+            {
+                Debug.LogWarning("[ConversationAsset] Addressables settings not found — make sure Addressables is initialized.");
+                return;
+            }
+
+            int skipped = 0;
+
             foreach (string guid in guids)
             {
-                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                asset.cgAddressableKeys.Add(assetPath);
+                var entry = settings.FindAssetEntry(guid);
+
+                if (entry == null)
+                {
+                    string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                    Debug.LogWarning($"[ConversationAsset] Asset not marked as Addressable — skipped: {assetPath}");
+                    skipped++;
+                    continue;
+                }
+
+                asset.cgAddressableKeys.Add(entry.address);
             }
+
+            if (skipped > 0)
+            {
+                Debug.LogWarning($"[ConversationAsset] {skipped} asset(s) skipped — mark them as Addressable first, then re-run.");
+            }
+
+            Debug.Log($"[ConversationAsset] Filled {asset.cgAddressableKeys.Count} CG keys from Addressables.");
         }
 
         // ─────────────────────────────────────────────
@@ -117,6 +146,45 @@ namespace BubbleSpinner.EditorTools
 
                 if (c.file == null)
                     warnings.Add($"Chapter [{i}] \"{c.chapterId}\" has no file assigned.");
+            }
+
+            // Validate CG keys against Addressables
+            if (asset.cgAddressableKeys != null && asset.cgAddressableKeys.Count > 0)
+            {
+                var settings = AddressableAssetSettingsDefaultObject.Settings;
+
+                if (settings == null)
+                {
+                    warnings.Add("Addressables settings not found — cannot validate CG keys.");
+                }
+                else
+                {
+                    for (int i = 0; i < asset.cgAddressableKeys.Count; i++)
+                    {
+                        string key = asset.cgAddressableKeys[i];
+
+                        if (string.IsNullOrEmpty(key))
+                        {
+                            warnings.Add($"CG key [{i}] is empty.");
+                            continue;
+                        }
+
+                        // Check if any entry has this address
+                        bool found = false;
+                        foreach (var group in settings.groups)
+                        {
+                            if (group == null) continue;
+                            foreach (var entry in group.entries)
+                            {
+                                if (entry.address == key) { found = true; break; }
+                            }
+                            if (found) break;
+                        }
+
+                        if (!found)
+                            warnings.Add($"CG key [{i}] '{key}' not found in Addressables — check address or mark asset as Addressable.");
+                    }
+                }
             }
 
             return warnings;

@@ -32,10 +32,10 @@ MonoBehaviour:
   description: N/A
   personalityTraits: N/A
   cgAddressableKeys:
-  - Assets/Characters/Sofia/ChatA_CG1.png
-  - Assets/Characters/Sofia/ChatA_CG2.png
-  - Assets/Characters/Sofia/ChatA_CG3.png
-  - Assets/Characters/Sofia/ChatA_CG4.png
-  - Assets/Characters/Sofia/ChatA_CG5.png
-  - Assets/Characters/Sofia/ChatA_CG6.png
-  - Assets/Characters/Sofia/ChatA_CG7.png
+  - Sofia/CG1
+  - Sofia/CG2
+  - Sofia/CG3
+  - Sofia/CG4
+  - Sofia/CG5
+  - Sofia/CG6
+  - Sofia/CG7
